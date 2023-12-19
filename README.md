@@ -50,7 +50,8 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
 
 
 ## Usage/Examples
-![Image 1](images/image1.jpg) ![Image 2](images/image2.jpg)
+<img src="images/image1.png" alt="Connection Establishing screen" width="300"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="images/image2.png" alt="Read & write Operations" width="300"/>
 
 
 ### Connect to Database
@@ -72,7 +73,7 @@ bool isConnected = await mssqlConnection.connect(
 ```
 ### Get Data
 
-Retrieve data from the connected database using the getData method. Provide a SQL query to fetch the desired information.
+Retrieve data from the connected database using the `getData` method. Pass the SQL query as parameter to `getData` method to fetch the desired information.
 
 ```dart
 // Example: Fetch data from the database
@@ -84,7 +85,7 @@ String result = await mssqlConnection.getData(query);
 
 ### Write Data
 
-Write data to the connected database using the writeData method. Supply a SQL query for database modification.
+Write data to the connected database using the `writeData` method. Pass the SQL query as parameter to `writeData` method for database modification.
 
 ```dart
 // Example: Update data in the database
