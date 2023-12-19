@@ -39,7 +39,8 @@ class MockMsSQLConnectionPlatform
 }
 
 void main() {
-  final MsSQLConnectionPlatform initialPlatform = MsSQLConnectionPlatform.instance;
+  final MsSQLConnectionPlatform initialPlatform =
+      MsSQLConnectionPlatform.instance;
 
   test('$MethodChannelMsSQLConnection is the default instance', () {
     expect(initialPlatform, isInstanceOf<MethodChannelMsSQLConnection>());
@@ -73,4 +74,3 @@ void main() {
     expect(writeDataResult, "Mocked result");
   });
 }
-

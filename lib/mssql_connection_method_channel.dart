@@ -3,19 +3,24 @@ import 'package:flutter/services.dart';
 
 import 'mssql_connection_platform_interface.dart';
 
+/// A platform implementation of [MsSQLConnectionPlatform] using method channels.
+///
+/// This class interacts with the native platform using the [MethodChannel]
+/// to perform MS SQL Server database operations.
 class MethodChannelMsSQLConnection extends MsSQLConnectionPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel('mssql_connection');
 
   @override
-  Future<bool> connect(
-      {required String ip,
-      required String port,
-      required String databaseName,
-      required String username,
-      required String password,
-      int timeoutInSeconds = 30}) async {
+  Future<bool> connect({
+    required String ip,
+    required String port,
+    required String databaseName,
+    required String username,
+    required String password,
+    int timeoutInSeconds = 30,
+  }) async {
     try {
       var invokeMethod = await methodChannel.invokeMethod<bool>(
             'connect',
