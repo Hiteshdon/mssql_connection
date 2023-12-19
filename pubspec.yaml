@@ -1,9 +1,7 @@
 name: mssql_connection
-description: A robust and efficient Flutter plugin for connecting to Microsoft SQL Server databases using the JTDS driver.
-  This plugin provides seamless integration with your Flutter application, enabling you to perform database operations,
-  such as querying data, writing data, connecting, and disconnecting, with ease.
+description: A Flutter plugin for Android providing MS SQL Server database connectivity.
 
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/Hiteshdon/mssql_connection.git
 
 environment:

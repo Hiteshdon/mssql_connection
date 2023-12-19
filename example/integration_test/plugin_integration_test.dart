@@ -6,12 +6,11 @@
 // For more information about Flutter integration tests, please see
 // https://docs.flutter.dev/cookbook/testing/integration/introduction
 
-
 import 'package:integration_test/integration_test.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  
+
   // testWidgets('getPlatformVersion test', (WidgetTester tester) async {
   //   final MssqlConnection plugin = MssqlConnection.getInstance();
   //   final String? version = await plugin.getPlatformVersion();

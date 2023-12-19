@@ -2,13 +2,17 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'mssql_connection_method_channel.dart';
 
+/// A platform interface for interacting with MS SQL Server databases.
+///
+/// This class declares methods for performing common database operations,
+/// and platform-specific implementations should extend this class.
+///
+/// The platform-specific class should be set using the [instance] property.
 abstract class MsSQLConnectionPlatform extends PlatformInterface {
-  /// Constructs a MsSQLConnectionPlatform.
+  /// Constructs a [MsSQLConnectionPlatform].
   MsSQLConnectionPlatform() : super(token: _token);
 
   static final Object _token = Object();
-
-  static MsSQLConnectionPlatform _instance = MethodChannelMsSQLConnection();
 
   /// The default instance of [MsSQLConnectionPlatform] to use.
   ///
@@ -23,19 +27,27 @@ abstract class MsSQLConnectionPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<bool> connect({required String ip,required String port,required String databaseName,required String username,required String password, int timeoutInSeconds = 15}) {
-    throw UnimplementedError('connect() has not been implemented.');
-  }
+  static MsSQLConnectionPlatform _instance = MethodChannelMsSQLConnection();
 
-  Future<String> getData(String query) {
-    throw UnimplementedError('getData() has not been implemented.');
-  }
+  /// Connects to the MS SQL Server database.
+  ///
+  /// The required parameters are the IP address, port, database name,
+  /// username, password, and an optional timeout in seconds.
+  Future<bool> connect({
+    required String ip,
+    required String port,
+    required String databaseName,
+    required String username,
+    required String password,
+    int timeoutInSeconds = 15,
+  });
 
-  Future<String> writeData(String query) {
-    throw UnimplementedError('writeData() has not been implemented.');
-  }
+  /// Retrieves data from the database using the specified SQL query.
+  Future<String> getData(String query);
 
-  Future<bool> disconnect() {
-    throw UnimplementedError('disconnect() has not been implemented.');
-  }
+  /// Writes data to the database using the specified SQL query.
+  Future<String> writeData(String query);
+
+  /// Disconnects from the MS SQL Server database.
+  Future<bool> disconnect();
 }
