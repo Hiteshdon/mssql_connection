@@ -54,6 +54,7 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
 <img src="https://github.com/Hiteshdon/mssql_connection/blob/f58ae81722cd6472d2e574913b54230c0467f6e5/images/image2.png?raw=true" alt="Read & write Operations" width="300"/>
 
 
+
 ### Connect to Database
 
 To establish a connection to the Microsoft SQL Server database, use the `connect` method. This method takes the server details, including IP, port, database name, username, and password.

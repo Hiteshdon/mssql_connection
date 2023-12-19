@@ -14,6 +14,7 @@ abstract class MsSQLConnectionPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
+
   /// The default instance of [MsSQLConnectionPlatform] to use.
   ///
   /// Defaults to [MethodChannelMsSQLConnection].
