@@ -1,26 +1,7 @@
 name: mssql_connection_example
 version: 1.0.0
 
-description: >
-  A robust and efficient Flutter plugin for connecting to Microsoft SQL Server databases using the JTDS driver.
-  This plugin provides seamless integration with your Flutter application, enabling you to perform database operations,
-  such as querying data, writing data, connecting, and disconnecting, with ease.
-
-  Key Features:
-  - Connect to Microsoft SQL Server databases with customizable connection parameters.
-  - Execute SQL queries to retrieve data as JSON-encoded results.
-  - Perform database write operations, including inserts, updates, and deletes, with transaction support.
-  - Automatic reconnection handling for improved robustness in case of connection interruptions.
-  - Configurable timeout for database connections to manage response times.
-
-  Usage:
-  - Integrate the plugin into your Flutter app to establish secure connections to Microsoft SQL Server databases.
-  - Execute complex SQL queries and retrieve results in JSON format for seamless integration with your application's logic.
-  - Effortlessly manage database write operations, ensuring data consistency and integrity.
-  - Utilize the plugin's automatic reconnection mechanism to handle network interruptions gracefully.
-  - Customize connection parameters, including URL, username, password, and timeout, to suit your application's needs.
-
-  Note: This plugin assumes the usage of the JTDS JDBC driver for connecting to Microsoft SQL Server databases.
+description: A new Flutter plugin project.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -39,12 +20,13 @@ dependencies:
   flutter:
     sdk: flutter
 
-  mssql_connection: 1.0.0
+  mssql_connection: 
     # When depending on this package from a real application you should use:
     #   mssql_connection: ^x.y.
     # See https://dart.dev/tools/pub/dependencies#version-constraints
     # The example app is bundled with the plugin so we use a path dependency on
-    # the parent directory to use the current plugin's version.
+    # the parent directory to use the current plugin's version...
+    path: "../"
   
 
   # The following adds the Cupertino Icons font to your application.
