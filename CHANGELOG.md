@@ -1,10 +1,10 @@
-# Changelog
 
-All notable changes to this project will be documented in this file.
+## [1.0.2]
 
-## [Unreleased]
+### Added
+- updated the documentation.
 
-## [1.0.0] - YYYY-MM-DD
+## [1.0.1]
 
 ### Added
 - Initial release of the Flutter plugin for connecting to Microsoft SQL Server databases.
@@ -14,15 +14,5 @@ All notable changes to this project will be documented in this file.
 - Automatic reconnection handling for improved robustness in case of connection interruptions.
 - Configurable timeout for database connections to manage response times.
 
-### Usage
-- Integrate the plugin into your Flutter app to establish secure connections to Microsoft SQL Server databases.
-- Execute complex SQL queries and retrieve results in JSON format for seamless integration with your application's logic.
-- Effortlessly manage database write operations, ensuring data consistency and integrity.
-- Utilize the plugin's automatic reconnection mechanism to handle network interruptions gracefully.
-- Customize connection parameters, including URL, username, password, and timeout, to suit your application's needs.
-
-### Note
-- This plugin assumes the usage of the JTDS JDBC driver for connecting to Microsoft SQL Server databases.
-
-[Unreleased]: https://github.com/Hiteshdon/mssql_connection.git
-[1.0.0]: https://github.com/Hiteshdon/mssql_connection.git
+[1.0.1]: https://github.com/Hiteshdon/mssql_connection.git
+[1.0.2]: https://github.com/Hiteshdon/mssql_connection.git
