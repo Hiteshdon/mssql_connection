@@ -56,6 +56,7 @@ class MssqlConnection {
 
   Future<bool> disconnect() {
     try {
+      _isConnected = false;
       return MsSQLConnectionPlatform.instance.disconnect();
     } catch (e) {
       rethrow;
