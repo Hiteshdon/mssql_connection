@@ -1,4 +1,9 @@
 
+## [1.2.0]
+
+### Added
+- Optimized plugin, converted Java to Kotlin for performance enhacement.
+
 ## [1.0.3]
 
 ### Added
