@@ -1,7 +1,7 @@
 name: mssql_connection
 description: A Flutter plugin for Android providing MS SQL Server database connectivity.
 
-version: 1.0.3
+version: 1.1.0
 homepage: https://github.com/Hiteshdon/mssql_connection.git
 
 environment:

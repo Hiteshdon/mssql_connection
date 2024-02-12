@@ -1,5 +1,5 @@
 
-## [1.2.0]
+## [1.1.0]
 
 ### Added
 - Optimized plugin, converted Java to Kotlin for performance enhacement.
