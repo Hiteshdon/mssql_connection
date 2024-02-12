@@ -41,9 +41,9 @@ class MethodChannelMsSQLConnection extends MsSQLConnectionPlatform {
   @override
   Future<String> getData(String query) async {
     try {
-      final String? result =
-          await methodChannel.invokeMethod<String>('getData', {'query': query});
-      return result ?? '';
+      final result =
+          await methodChannel.invokeMethod<List>('getData', {'query': query});
+      return result == null ? "" : "[${result.join(",")}]";
     } catch (e) {
       rethrow;
     }
