@@ -235,6 +235,7 @@ class _HomPageState extends State<HomPage> {
             "Duration: $difference and RecordCount:${jsonDecode(result).length}");
         toastMessage(
             "Please check the console for data.\n Duration: $difference");
+        print(result.toString());
       } else {
         if (writeQuery.isEmpty) {
           toastMessage("Empty query", color: Colors.redAccent);
