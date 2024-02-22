@@ -1,4 +1,9 @@
 
+## [1.1.1]
+
+### Added
+- Updated the milliseconds timestamp to date string.
+
 ## [1.1.0]
 
 ### Added
@@ -24,7 +29,5 @@
 - Automatic reconnection handling for improved robustness in case of connection interruptions.
 - Configurable timeout for database connections to manage response times.
 
-[1.0.1]: https://github.com/Hiteshdon/mssql_connection.git
-[1.0.2]: https://github.com/Hiteshdon/mssql_connection.git
-[1.0.3]: https://github.com/Hiteshdon/mssql_connection.git
+[1.1.1]: https://github.com/Hiteshdon/mssql_connection.git
 
