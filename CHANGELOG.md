@@ -1,8 +1,13 @@
 
+## [1.1.2]
+
+### Added
+- Updated the bit type to Integer.
+
 ## [1.1.1]
 
 ### Added
-- Updated the milliseconds timestamp to date string.
+- Updated the milliseconds timestamp to date String.
 
 ## [1.1.0]
 
@@ -29,5 +34,5 @@
 - Automatic reconnection handling for improved robustness in case of connection interruptions.
 - Configurable timeout for database connections to manage response times.
 
-[1.1.1]: https://github.com/Hiteshdon/mssql_connection.git
+[1.1.2]: https://github.com/Hiteshdon/mssql_connection.git
 
