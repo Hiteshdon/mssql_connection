@@ -1,4 +1,9 @@
 
+## [1.1.3]
+
+### Added
+- bug fixes in stored procedures.
+
 ## [1.1.2]
 
 ### Added
@@ -34,5 +39,5 @@
 - Automatic reconnection handling for improved robustness in case of connection interruptions.
 - Configurable timeout for database connections to manage response times.
 
-[1.1.2]: https://github.com/Hiteshdon/mssql_connection.git
+[1.1.3]: https://github.com/Hiteshdon/mssql_connection.git
 

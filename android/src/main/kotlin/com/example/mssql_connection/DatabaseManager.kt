@@ -3,19 +3,14 @@ package com.example.mssql_connection
 import android.util.Log
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.lang.StringBuilder
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.SQLException
-import java.sql.Statement
 
 
 class DatabaseManager {
@@ -76,23 +71,39 @@ class DatabaseManager {
                     ResultSet.CONCUR_READ_ONLY
                 )
                 val result = statement.executeQuery(query)
-                result.last()
-                val totalSize = result.row;
-                var chunkSize: Int = 1000
-                result.beforeFirst();
+                if(result.type!=ResultSet.TYPE_SCROLL_SENSITIVE){
+                    val module = SimpleModule()
+                    module.addSerializer(ResultSetSerializer(Int.MAX_VALUE))
+                    val objectMapper = ObjectMapper()
+                    objectMapper.registerModule(module)
+                    val objectNode = objectMapper.createObjectNode()
+                    objectNode.putPOJO("results", result)
+                    var jsonString = objectMapper.writeValueAsString(objectNode)
+                    jsonString = jsonString.substring(jsonString.indexOf("[") + 1, jsonString.lastIndexOf("]"))
+                    result.close();
+                    statement.close();
+                    listOf(jsonString)
+                }else{
+                    result.last()
+                    val totalSize = result.row;
+                    var chunkSize: Int = 1000
+                    result.beforeFirst();
 
-                if (chunkSize < (totalSize / 10)) {
-                    chunkSize = totalSize / 10
-                }
-                if(chunkSize>10000){
-                    chunkSize =10000;
-                }
+                    if (chunkSize < (totalSize / 10)) {
+                        chunkSize = totalSize / 10
+                    }
+                    if(chunkSize>10000){
+                        chunkSize =10000;
+                    }
 
-                val chunks = (0..totalSize step chunkSize).map {
-                    async{ readChunkedResult(query, it, chunkSize) }
+                    val chunks = (0..totalSize step chunkSize).map {
+                        async{ readChunkedResult(query, it, chunkSize) }
+                    }
+                    val strings = chunks.awaitAll()
+                    result.close();
+                    statement.close();
+                    strings
                 }
-                val strings = chunks.awaitAll()
-                strings
             } catch (e: SQLException) {
                 if (isConnectionException(e)) {
                     getData(query)
