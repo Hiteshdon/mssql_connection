@@ -1,32 +1,26 @@
 
 ## [1.1.3]
 
-### Added
 - bug fixes in stored procedures.
 
 ## [1.1.2]
 
-### Added
 - Updated the bit type to Integer.
 
 ## [1.1.1]
 
-### Added
 - Updated the milliseconds timestamp to date String.
 
 ## [1.1.0]
 
-### Added
 - Optimized plugin, converted Java to Kotlin for performance enhacement.
 
 ## [1.0.3]
 
-### Added
 - updated the code documentation.
 
 ## [1.0.2]
 
-### Added
 - updated the documentation.
 
 ## [1.0.1]

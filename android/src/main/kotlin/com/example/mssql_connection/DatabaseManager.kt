@@ -7,10 +7,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.lang.StringBuilder
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.sql.Statement
 
 
 class DatabaseManager {
@@ -153,7 +162,6 @@ class DatabaseManager {
                 statement.executeUpdate()
             } catch (e: SQLException) {
                 if (isConnectionException(e)) {
-
                     reconnectIfNecessary()
                     writeData(query);
                 } else {

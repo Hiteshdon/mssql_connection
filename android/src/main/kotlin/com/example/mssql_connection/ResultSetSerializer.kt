@@ -105,7 +105,6 @@ class ResultSetSerializer constructor (private val chunkSize: Int) : JsonSeriali
                                 gen.writeNumber(l)
                             }
                         }
-
 //                        Types.DATE -> provider.defaultSerializeDateValue(rs.getDate(i + 1), gen)
 //                        Types.TIMESTAMP -> provider.defaultSerializeDateValue(
 //                            rs.getTimestamp(i + 1),
