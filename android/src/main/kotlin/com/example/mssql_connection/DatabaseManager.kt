@@ -3,6 +3,10 @@ package com.example.mssql_connection
 import android.util.Log
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -28,11 +32,11 @@ class DatabaseManager {
     private suspend fun establishConnection() {
         withContext(Dispatchers.IO) {
             try {
-                Log.i("DatabaseManager", "Establishing database connection...")
+//                Log.i("DatabaseManager", "Establishing database connection...")
                 Class.forName("net.sourceforge.jtds.jdbc.Driver")
                 DriverManager.setLoginTimeout(timeoutInSeconds)
                 connection = DriverManager.getConnection(url!!, username!!, password!!)
-                Log.i("DatabaseManager", "Database connection established successfully.")
+//                Log.i("DatabaseManager", "Database connection established successfully.")
             } catch (e: ClassNotFoundException) {
                 Log.e("DatabaseManager", "Error establishing database connection: ${e.message}")
                 throw e
@@ -76,33 +80,41 @@ class DatabaseManager {
                     ResultSet.CONCUR_READ_ONLY
                 )
                 val result = statement.executeQuery(query)
-                result.last()
-                val totalSize = result.row;
-                var chunkSize: Int = 1000
-                result.beforeFirst();
+                if(result.type!=ResultSet.TYPE_SCROLL_SENSITIVE){
+                    val module = SimpleModule()
+                    module.addSerializer(ResultSetSerializer(Int.MAX_VALUE))
+                    val objectMapper = ObjectMapper()
+                    objectMapper.registerModule(module)
+                    val objectNode = objectMapper.createObjectNode()
+                    objectNode.putPOJO("results", result)
+                    var jsonString = objectMapper.writeValueAsString(objectNode)
+                    jsonString = jsonString.substring(jsonString.indexOf("[") + 1, jsonString.lastIndexOf("]"))
+                    result.close();
+                    statement.close();
+                    listOf(jsonString)
+                }else{
+                    result.last()
+                    val totalSize = result.row;
+                    var chunkSize: Int = 1000
+                    result.beforeFirst();
 
-                if (chunkSize < (totalSize / 10)) {
-                    chunkSize = totalSize / 10
-                }
+                    if (chunkSize < (totalSize / 10)) {
+                        chunkSize = totalSize / 10
+                    }
+                    if(chunkSize>10000){
+                        chunkSize =10000;
+                    }
 
-                val chunks = (0..totalSize step chunkSize).map {
-                    async{ readChunkedResult(query, it, chunkSize) }
+                    val chunks = (0..totalSize step chunkSize).map {
+                        async{ readChunkedResult(query, it, chunkSize) }
+                    }
+                    val strings = chunks.awaitAll()
+                    result.close();
+                    statement.close();
+                    strings
                 }
-//                chunks.awaitAll()
-                val strings = chunks.awaitAll()//.joinToString(",", "[", "]")
-                val stringBuilder= StringBuilder()
-                for(string in strings){
-//                    stringBuilder.append(string)
-                    Log.i("String length","Length: ${string.length}")
-                }
-                val placeHolder = JSONObject().put("results", totalSize.toString()).toString()
-                strings
             } catch (e: SQLException) {
                 if (isConnectionException(e)) {
-                    Log.i(
-                        "DatabaseManager",
-                        "Connection lost. Reconnecting and retrying operation..."
-                    )
                     getData(query)
                 } else {
                     Log.e("DatabaseManager", "Error executing query: ${e.message}")
@@ -135,7 +147,6 @@ class DatabaseManager {
         } catch (e: SQLException) {
             if (isConnectionException(e)) {
                 reconnectIfNecessary()
-                Log.e("Reconnecting", "Repeat")
                 readChunkedResult(query, startRow, chunkSize)
             }
             Log.e("DatabaseManager", "Error executing query: ${e.sqlState} | ${e.message}")
@@ -151,10 +162,6 @@ class DatabaseManager {
                 statement.executeUpdate()
             } catch (e: SQLException) {
                 if (isConnectionException(e)) {
-                    Log.i(
-                        "DatabaseManager",
-                        "Connection lost. Reconnecting and retrying operation..."
-                    )
                     reconnectIfNecessary()
                     writeData(query);
                 } else {
@@ -168,7 +175,7 @@ class DatabaseManager {
     fun disconnect() {
         try {
             connection?.close()
-            Log.i("DatabaseManager", "Disconnected from the database.")
+//            Log.i("DatabaseManager", "Disconnected from the database.")
         } catch (e: SQLException) {
             Log.e("DatabaseManager", "Error disconnecting from the database: ${e.message}")
             throw e
