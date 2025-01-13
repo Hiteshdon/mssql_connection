@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_toast_message_bar/toast_message_bar.dart';
 import 'package:mssql_connection/mssql_connection.dart';
 
-void main() async {
+void main() {
   runApp(const MyApp());
 }
 
@@ -203,18 +203,39 @@ class _HomPageState extends State<HomPage> {
       } else {
         toastMessage("Connection Failed", color: Colors.redAccent);
       }
+    }).onError((e, st) {
+      toastMessage(e.toString(), color: Colors.redAccent);
     });
   }
 
-  Future<bool?> toastMessage(String message,
-      {Color color = Colors.blueAccent}) {
-    return Fluttertoast.showToast(
-        msg: message,
-        toastLength: Toast.LENGTH_SHORT,
-        timeInSecForIosWeb: 1,
-        backgroundColor: color,
-        textColor: Colors.white,
-        fontSize: 16.0);
+  Future<void> toastMessage(String message,
+      {Color color = Colors.blueAccent, String title = ""}) async {
+    /// ignore: use_build_context_synchronously
+    await ToastMessageBar(
+      //Add background color for your toast message
+      backgroundColor: color,
+
+      //Add title for your toast message
+      title: color == Colors.blueAccent
+          ? "INFO"
+          : color == Colors.redAccent
+              ? "ERROR"
+              : color == Colors.green
+                  ? "SUCCESS"
+                  : title,
+
+      //Add title color for your toast
+      titleColor: Colors.white,
+
+      //Add message for your toast
+      message: message,
+
+      //Add message color for your toast message
+      messageColor: Colors.white,
+
+      //Add duration to display the message
+      duration: const Duration(seconds: 3),
+    ).show(context);
   }
 
   execute(String s, BuildContext context) async {
@@ -234,8 +255,8 @@ class _HomPageState extends State<HomPage> {
         print(
             "Duration: $difference and RecordCount:${jsonDecode(result).length}");
         toastMessage(
-            "Please check the console for data.\n Duration: $difference");
-        print(result.toString());
+            "Total Records Count:${jsonDecode(result).length}.\n Duration: $difference");
+        // print(result.toString());
       } else {
         if (writeQuery.isEmpty) {
           toastMessage("Empty query", color: Colors.redAccent);
@@ -252,9 +273,9 @@ class _HomPageState extends State<HomPage> {
         toastMessage(
             "Please check the console for data.\n Duration: $difference");
       }
-    } on PlatformException catch (e) {
+    } catch (e) {
       hideProgress(context);
-      toastMessage(e.message ?? "", color: Colors.redAccent);
+      toastMessage(e.toString(), color: Colors.redAccent);
     }
   }
 
