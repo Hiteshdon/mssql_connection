@@ -5,7 +5,7 @@ version: 2.0.0
 homepage: https://github.com/Hiteshdon/mssql_connection.git
 
 environment:
-  sdk: ^3.6.0
+  sdk: '>=3.0.5 <4.0.0'
   flutter: '>=3.3.0'
 
 dependencies:
