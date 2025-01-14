@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1]
+
+### Updated
+- Adjusted environment configuration for improved compatibility with a broader range of Flutter projects.
+
 ## [2.0.0]
 
 ### Added
@@ -55,4 +60,4 @@ All notable changes to this project will be documented in this file.
 - Automatic reconnection handling for robust connectivity during connection interruptions.
 - Configurable timeout settings for managing database connection response times.
 
-[2.0.0]: https://github.com/Hiteshdon/mssql_connection.git
+[2.0.1]: https://github.com/Hiteshdon/mssql_connection.git
