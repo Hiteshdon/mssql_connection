@@ -119,12 +119,67 @@ bool isDisconnected = await mssqlConnection.disconnect();
 
 ---
 
-## What's New in v2.0.0?
+## 🔄 Version 2.0.2 Updates
 
-- **Windows Support**: Added ODBC-based connectivity for Windows.
-- **Improved Compatibility**: Updated to support Gradle 8.
-- **Enhanced Error Handling**: Simplified custom exception handling for consistent debugging.
-- **Optimized Operations**: Performance enhancements across querying, connection, and disconnection mechanisms.
+### ✅ Android
+
+Here's a clearer and more helpful version of that line for your changelog or README:
+
+* ✅ Added a `proguard-rules.pro` file under `example/android/app/` to prevent *R8: Missing class* issues during APK builds.
+> 🔧 If you encounter similar R8-related errors in your own project when using this plugin, you can [download this file](https://github.com/Hiteshdon/mssql_connection/blob/main/example/android/app/proguard-rules.pro) and place it in your project at `android/app/`.
+
+* ✅ Improved JSON serialization support for special SQL types:
+
+  * `Types.BINARY`, `VARBINARY`, `LONGVARBINARY`
+  * `CLOB`, `ARRAY`, `STRUCT`, `DISTINCT`, `REF`, `JAVA_OBJECT`
+
+### 🪟 Windows
+
+* 🛠️ Fixed `INK : fatal error LNK1104` issue during Windows builds for smoother native compilation.
+
+---
+
+## 🔐 Binary Data Handling (`VARBINARY`, `BLOB`, `BINARY`)
+
+This plugin automatically handles binary columns like `VARBINARY`, `BLOB`, and `BINARY` by **Base64 encoding** their contents in the JSON output.
+
+### 🧪 Example
+
+**SQL Query:**
+
+```sql
+INSERT INTO Files (FileName, Data)
+VALUES ('example.txt', CAST('This is some binary data' AS VARBINARY(MAX)));
+```
+
+**Flutter Output:**
+
+```json
+[
+  {
+    "Id": 1,
+    "FileName": "example.txt",
+    "Data": "VGhpcyBpcyBzb21lIGJpbmFyeSBkYXRh"
+  }
+]
+```
+
+### 📥 Decoding in Flutter
+
+You can decode this data like this:
+
+```dart
+import 'dart:convert';
+
+final base64Str = "VGhpcyBpcyBzb21lIGJpbmFyeSBkYXRh";
+final bytes = base64Decode(base64Str);
+
+// If the binary is actually plain text, decode it further
+final decodedText = utf8.decode(bytes);
+print(decodedText); // Output: This is some binary data
+```
+
+> ⚠️ **Note**: Always decode the binary based on its original intent—whether it's a file, an image, or plain text.
 
 ---
 
