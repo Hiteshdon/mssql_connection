@@ -164,11 +164,40 @@ std::string DatabaseManager::getData(const std::string& query) {
 					break;
 				}
 				default: {
-					SQLWCHAR charValue[1024] = { 0 };
-					SQLGetData(m_stmt, i, SQL_C_WCHAR, charValue, sizeof(charValue), &indicator);
+					// SQLWCHAR charValue[1024] = { 0 };
+					std::wstring totalValue;
+					SQLWCHAR buffer[512] = {0};
+
+					while (true) {
+						memset(buffer, 0, sizeof(buffer));
+						SQLRETURN chunkRet = SQLGetData(m_stmt, i, SQL_C_WCHAR, buffer, sizeof(buffer), &indicator);
+
+
+						if (chunkRet == SQL_NO_DATA) {
+							break;
+						}
+
+						if (indicator == SQL_NULL_DATA) {
+							columnValue.SetNull();
+							break;
+						}
+
+						if (SQL_SUCCEEDED(chunkRet)) {
+							totalValue.append(buffer);
+							if (chunkRet == SQL_SUCCESS) {
+								break;
+							}
+						} else {
+							// Handle SQL_ERROR or unexpected condition
+							columnValue.SetNull();  // or throw an error
+							break;
+						}
+					}
+					// SQLGetData(m_stmt, i, SQL_C_WCHAR, charValue, sizeof(charValue), &indicator);
 
 					if (indicator != SQL_NULL_DATA) {
-						std::string narrowCharValue = convertSQLWCHARToString(charValue);
+						// std::string narrowCharValue = convertSQLWCHARToString(charValue);
+						std::string narrowCharValue = convertSQLWCHARToString(reinterpret_cast<const SQLWCHAR*>(totalValue.c_str()));
 						columnValue.SetString(narrowCharValue.c_str(), allocator);
 					}
 					else {
@@ -241,7 +270,7 @@ std::string DatabaseManager::writeData(const std::string& query) {
 		// Execute SQL query
 		std::wstring wquery = std::wstring(query.begin(), query.end());
 		ret = SQLExecDirectW(m_stmt, (SQLWCHAR*)wquery.c_str(), SQL_NTS);
-		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO || ret == SQL_NO_DATA) {
 			SQLLEN affectedRows;
 			SQLRowCount(m_stmt, &affectedRows);
 
