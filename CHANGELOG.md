@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.0.2]
+
+### Changed
+* Improved handling of affected row count for UPDATE statements returning 0 rows on Windows.
+* Enhanced type parsing in the default case for the Windows platform to support long text and binary fields.
+* Suppressed warnings related to jcifs and org.ietf.jgss classes during build.
+* Addressed R8 build issues, including missing classes and binary type resolution.
+* Fixed UTF-8 decoding inconsistencies when reading large text fields on Windows.
 
 ## [2.0.1]
 
@@ -60,4 +68,4 @@ All notable changes to this project will be documented in this file.
 - Automatic reconnection handling for robust connectivity during connection interruptions.
 - Configurable timeout settings for managing database connection response times.
 
-[2.0.1]: https://github.com/Hiteshdon/mssql_connection.git
+[2.0.2]: https://github.com/Hiteshdon/mssql_connection.git
