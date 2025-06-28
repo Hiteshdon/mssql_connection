@@ -1,5 +1,16 @@
 #include "include/mssql_connection/database_manager.h"
 
+// Helper function to convert UTF-8 std::string to std::wstring for Windows API
+std::wstring ConvertUtf8ToWide(const std::string& str) {
+    if (str.empty()) {
+        return std::wstring();
+    }
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+
 using namespace rapidjson;
 
 DatabaseManager::DatabaseManager()
@@ -34,14 +45,14 @@ bool DatabaseManager::connect(const std::string& server, const std::string& data
 			throw DatabaseException(errorMsg);
 		}
 
-		// Prepare connection string as wide string for Unicode support
-		std::wstring wconnString = L"Driver={ODBC Driver 18 for SQL Server};Server=" +
-			std::wstring(server.begin(), server.end()) +
-			L";Database=" + std::wstring(database.begin(), database.end()) +
-			L";UID=" + std::wstring(user.begin(), user.end()) +
-			L";PWD=" + std::wstring(password.begin(), password.end()) +
-			L";TrustServerCertificate=yes;Connection Timeout=" +
-			std::wstring(timeoutInSeconds.begin(), timeoutInSeconds.end()) + L";";
+        // Prepare connection string as wide string for Unicode support
+        std::wstring wconnString = L"Driver={ODBC Driver 18 for SQL Server};Server=" +
+                                   ConvertUtf8ToWide(server) +
+                                   L";Database=" + ConvertUtf8ToWide(database) +
+                                   L";UID=" + ConvertUtf8ToWide(user) +
+                                   L";PWD=" + ConvertUtf8ToWide(password) +
+                                   L";TrustServerCertificate=yes;Connection Timeout=" +
+                                   ConvertUtf8ToWide(timeoutInSeconds) + L";";
 
 		ret = SQLDriverConnectW(m_conn, NULL, (SQLWCHAR*)wconnString.c_str(), SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
@@ -98,14 +109,14 @@ std::string DatabaseManager::getData(const std::string& query) {
 			throw DatabaseException(errorMsg);
 		}
 
-		// Execute SQL query
-		std::wstring wquery = std::wstring(query.begin(), query.end());
-		ret = SQLExecDirectW(m_stmt, (SQLWCHAR*)wquery.c_str(), SQL_NTS);
-		if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-			std::string errorMsg = printError(SQL_HANDLE_STMT, m_stmt);
-			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
-			throw DatabaseException(errorMsg);
-		}
+        // Execute SQL query
+        std::wstring wquery = ConvertUtf8ToWide(query);
+        ret = SQLExecDirectW(m_stmt, (SQLWCHAR*)wquery.c_str(), SQL_NTS);
+        if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+            std::string errorMsg = printError(SQL_HANDLE_STMT, m_stmt);
+            SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+            throw DatabaseException(errorMsg);
+        }
 
 		SQLSMALLINT numCols;
 		SQLNumResultCols(m_stmt, &numCols);
@@ -207,17 +218,22 @@ std::string convertSQLWCHARToString(const SQLWCHAR* sqlwcharArray) {
 		return "";
 	}
 
-	// Convert SQLWCHAR to wide string
-	std::wstring wstr(reinterpret_cast<const wchar_t*>(sqlwcharArray));
+    const wchar_t* wstr = reinterpret_cast<const wchar_t*>(sqlwcharArray);
+    size_t wlen = wcslen(wstr);
+    if (wlen == 0) {
+        return "";
+    }
 
-	// Calculate the required buffer size
-	int bufferSize = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    int bufferSize = WideCharToMultiByte(CP_UTF8, 0, wstr, static_cast<int>(wlen), nullptr, 0, nullptr, nullptr);
+    if (bufferSize == 0) {
+        return ""; // Error
+    }
 
-	// Create a buffer to hold the converted string
-	std::string result(bufferSize - 1, '\0');
-
-	// Perform the actual conversion
-	WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], bufferSize, nullptr, nullptr);
+    std::string result(bufferSize, '\0');
+    int converted = WideCharToMultiByte(CP_UTF8, 0, wstr, static_cast<int>(wlen), &result[0], bufferSize, nullptr, nullptr);
+    if (converted == 0) {
+        return ""; // Error
+    }
 
 	return result;
 }
@@ -238,12 +254,12 @@ std::string DatabaseManager::writeData(const std::string& query) {
 			throw DatabaseException(errorMsg);
 		}
 
-		// Execute SQL query
-		std::wstring wquery = std::wstring(query.begin(), query.end());
-		ret = SQLExecDirectW(m_stmt, (SQLWCHAR*)wquery.c_str(), SQL_NTS);
-		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-			SQLLEN affectedRows;
-			SQLRowCount(m_stmt, &affectedRows);
+        // Execute SQL query
+        std::wstring wquery = ConvertUtf8ToWide(query);
+        ret = SQLExecDirectW(m_stmt, (SQLWCHAR*)wquery.c_str(), SQL_NTS);
+        if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+            SQLLEN affectedRows;
+            SQLRowCount(m_stmt, &affectedRows);
 
 			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
 
