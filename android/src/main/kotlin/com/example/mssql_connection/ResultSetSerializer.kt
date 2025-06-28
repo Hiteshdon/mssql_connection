@@ -91,11 +91,10 @@ class ResultSetSerializer constructor (private val chunkSize: Int) : JsonSeriali
                             }
                         }
 
-                        Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY -> gen.writeBinary(
-                            rs.getBytes(
-                                i + 1
-                            )
-                        )
+                        Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY -> {
+                            val bytes = rs.getBytes(i + 1)
+                            if (rs.wasNull()) gen.writeNull() else gen.writeBinary(bytes)
+                        }
 
                         Types.TINYINT, Types.SMALLINT -> {
                             l = rs.getShort(i + 1).toLong()
@@ -112,25 +111,19 @@ class ResultSetSerializer constructor (private val chunkSize: Int) : JsonSeriali
 //                        )
 
                         Types.BLOB -> {
-                            val blob = rs.getBlob(i)
-                            provider.defaultSerializeValue(blob.binaryStream, gen)
-                            blob.free()
+                            val blob = rs.getBlob(i + 1)
+                            val bytes = blob.getBytes(1, blob.length().toInt())
+                            if (rs.wasNull()) gen.writeNull() else gen.writeBinary(bytes)
                         }
 
                         Types.CLOB -> {
-                            val clob = rs.getString(i+1)
-                            provider.defaultSerializeValue(clob, gen)
-//                            clob.free()
+                            val clob = rs.getString(i + 1)
+                            if (rs.wasNull()) gen.writeNull() else gen.writeString(clob)
                         }
 
-                        Types.ARRAY -> throw RuntimeException("ResultSetSerializer not yet implemented for SQL type ARRAY")
-                        Types.STRUCT -> throw RuntimeException("ResultSetSerializer not yet implemented for SQL type STRUCT")
-                        Types.DISTINCT -> throw RuntimeException("ResultSetSerializer not yet implemented for SQL type DISTINCT")
-                        Types.REF -> throw RuntimeException("ResultSetSerializer not yet implemented for SQL type REF")
-                        Types.JAVA_OBJECT -> provider.defaultSerializeValue(
-                            rs.getObject(i + 1),
-                            gen
-                        )
+                        Types.ARRAY, Types.STRUCT, Types.DISTINCT, Types.REF, Types.JAVA_OBJECT -> {
+                            provider.defaultSerializeValue(rs.getObject(i + 1), gen)
+                        }
 
                         else -> provider.defaultSerializeValue(rs.getObject(i + 1), gen)
                     }

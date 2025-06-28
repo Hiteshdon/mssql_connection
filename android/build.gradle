@@ -49,6 +49,13 @@ android {
         multiDexEnabled true
     }
 
+    buildTypes {
+        release {
+            minifyEnabled true // Enable code shrinking
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' // Specify ProGuard rules
+        }
+    }
+
     dependencies {
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
