@@ -4,23 +4,24 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import android.os.StrictMode;
+import android.os.StrictMode
 import android.content.Context
 import kotlinx.coroutines.launch
 
 import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.BinaryMessenger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.json.JSONArray
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.ResultSet
+import java.sql.SQLException
+import java.sql.Statement
 import java.util.Locale
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -33,21 +34,18 @@ class MssqlConnectionPlugin : FlutterPlugin, MethodCallHandler {
   private lateinit var databaseManager: DatabaseManager
   private val mainScope = CoroutineScope(Dispatchers.Main)
   private var connection: Connection? = null
-//  private val executorService = Executors.newSingleThreadExecutor()
 
-  override fun onAttachedToEngine( binding: FlutterPlugin.FlutterPluginBinding) {
-    context = binding.applicationContext
-    channel =
-            MethodChannel(binding.binaryMessenger, "mssql_connection")
+  override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    context = flutterPluginBinding.applicationContext
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "mssql_connection")
     channel.setMethodCallHandler(this)
     val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
     StrictMode.setThreadPolicy(policy)
     databaseManager = DatabaseManager()
   }
 
-  override fun onDetachedFromEngine( binding: FlutterPlugin.FlutterPluginBinding) {
+  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
-//    executorService.shutdown()
     try {
       if (connection != null) {
         connection!!.close()

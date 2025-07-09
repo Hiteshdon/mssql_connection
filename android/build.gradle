@@ -45,8 +45,7 @@ android {
 
     defaultConfig {
         minSdk = 21
-
-        multiDexEnabled true
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -79,5 +78,5 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.5'
     implementation 'net.sourceforge.jtds:jtds:1.3.1'
-    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'androidx.multidex:multidex:2.0.1'
 }

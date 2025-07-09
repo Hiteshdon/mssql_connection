@@ -39,11 +39,11 @@ class HomPage extends StatefulWidget {
 }
 
 class _HomPageState extends State<HomPage> {
-  String ip = '',
-      port = '',
-      username = '',
-      password = '',
-      databaseName = '',
+  String ip = '26.133.16.142',
+      port = '51735',
+      username = 'sa',
+      password = 'Satcom2025.',
+      databaseName = 'CAP_NK_LAB\\SQLEXPRESS',
       readQuery = '',
       writeQuery = '';
   final _sqlConnection = MssqlConnection.getInstance();
