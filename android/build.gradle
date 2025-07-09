@@ -52,6 +52,10 @@ android {
         release {
             minifyEnabled true // Enable code shrinking
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' // Specify ProGuard rules
+            consumerProguardFiles 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
         }
     }
 
