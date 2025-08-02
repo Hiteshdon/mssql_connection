@@ -8,6 +8,7 @@
 #include <iostream>    // For standard input/output
 #include <fstream>     // For reading config file
 #include <string>
+#include <vector>      // For std::vector
 
 // RapidJSON headers
 #include "include/external/rapidjson/document.h"    // For parsing JSON data
@@ -47,6 +48,9 @@ public:
     // Write data to the database
     std::string writeData(const std::string& query);
 
+    // Execute parameterized query with prepared statements
+    std::string executeParameterizedQuery(const std::string& sql, const std::vector<std::string>& params);
+
     // Error handling
     std::string printError(SQLSMALLINT handleType, SQLHANDLE handle);
 
@@ -58,3 +62,6 @@ private:
 };
 
 std::string convertSQLWCHARToString(const SQLWCHAR* sqlwcharArray);
+
+// Helper function to convert UTF-8 std::string to std::wstring for Windows API
+std::wstring ConvertUtf8ToWide(const std::string& str);

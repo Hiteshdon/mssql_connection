@@ -36,6 +36,12 @@ class MockMsSQLConnectionPlatform
     // Implementing the writeData method
     return Future.value("Mocked result");
   }
+
+  @override
+  Future<dynamic> executeParameterizedQuery(String sql, List<String> params) async {
+    // Implementing the executeParameterizedQuery method
+    return Future.value("Mocked parameterized query result");
+  }
 }
 
 void main() {

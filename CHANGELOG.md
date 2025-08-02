@@ -1,6 +1,48 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.1.0]
+
+### Added
+- Parameterized query support using prepared statements to prevent SQL injection attacks.
+- New `executeParameterizedQuery` method across Windows, Android, and Dart platforms for secure database operations.
+- Enhanced security through proper parameter binding instead of string concatenation.
+
+### Enhanced
+- Windows platform now uses ODBC prepared statements with `SQLPrepareW` and `SQLBindParameter` for secure query execution.
+- Android platform now uses JDBC `PreparedStatement` with proper parameter binding for enhanced security.
+- Improved memory management in Windows parameter binding to prevent memory corruption issues.
+
+### Security
+- Addressed critical SQL injection vulnerabilities through implementation of prepared statements.
+- Enhanced error handling to prevent information disclosure while maintaining debugging capabilities.
+- Improved parameter validation and type safety across all platforms.
+
+## [2.0.2]
+
+### Changed
+* Improved handling of affected row count for UPDATE statements returning 0 rows on Windows.
+* Enhanced type parsing in the default case for the Windows platform to support long text and binary fields.
+* Suppressed warnings related to jcifs and org.ietf.jgss classes during build.
+* Addressed R8 build issues, including missing classes and binary type resolution.
+* Fixed UTF-8 decoding inconsistencies when reading large text fields on Windows.
+## [2.1.0]
+
+### Added
+- Parameterized query support using prepared statements to prevent SQL injection attacks.
+- New `executeParameterizedQuery` method across Windows, Android, and Dart platforms for secure database operations.
+- Enhanced security through proper parameter binding instead of string concatenation.
+
+### Enhanced
+- Windows platform now uses ODBC prepared statements with `SQLPrepareW` and `SQLBindParameter` for secure query execution.
+- Android platform now uses JDBC `PreparedStatement` with proper parameter binding for enhanced security.
+- Improved memory management in Windows parameter binding to prevent memory corruption issues.
+
+### Security
+- Addressed critical SQL injection vulnerabilities through implementation of prepared statements.
+- Enhanced error handling to prevent information disclosure while maintaining debugging capabilities.
+- Improved parameter validation and type safety across all platforms.
+
 ## [2.0.2]
 
 ### Changed

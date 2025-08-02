@@ -171,6 +171,56 @@ class DatabaseManager {
         }
     }
 
+    suspend fun executeParameterizedQuery(sql: String, params: List<String>): Any {
+        reconnectIfNecessary()
+        return withContext(Dispatchers.IO) {
+            try {
+                val preparedStatement = connection!!.prepareStatement(sql)
+                
+                // Bind parameters
+                for (i in params.indices) {
+                    preparedStatement.setString(i + 1, params[i])
+                }
+                
+                // Check if this is a SELECT query by examining if it returns a ResultSet
+                val hasResultSet = sql.trim().startsWith("SELECT", ignoreCase = true) ||
+                                   sql.trim().startsWith("WITH", ignoreCase = true) ||
+                                   sql.trim().startsWith("SHOW", ignoreCase = true)
+                
+                if (hasResultSet) {
+                    // Execute query and return results
+                    val result = preparedStatement.executeQuery()
+                    
+                    val module = SimpleModule()
+                    module.addSerializer(ResultSetSerializer(Int.MAX_VALUE))
+                    val objectMapper = ObjectMapper()
+                    objectMapper.registerModule(module)
+                    val objectNode = objectMapper.createObjectNode()
+                    objectNode.putPOJO("results", result)
+                    var jsonString = objectMapper.writeValueAsString(objectNode)
+                    jsonString = jsonString.substring(jsonString.indexOf("[") + 1, jsonString.lastIndexOf("]"))
+                    
+                    result.close()
+                    preparedStatement.close()
+                    listOf(jsonString)
+                } else {
+                    // Execute update and return affected rows count
+                    val affectedRows = preparedStatement.executeUpdate()
+                    preparedStatement.close()
+                    affectedRows
+                }
+            } catch (e: SQLException) {
+                if (isConnectionException(e)) {
+                    reconnectIfNecessary()
+                    executeParameterizedQuery(sql, params)
+                } else {
+                    Log.e("DatabaseManager", "Error executing parameterized query: ${e.message}")
+                    throw e
+                }
+            }
+        }
+    }
+
     fun disconnect() {
         try {
             connection?.close()

@@ -57,6 +57,9 @@ abstract class MsSQLConnectionPlatform extends PlatformInterface {
   /// Writes data to the database using the specified SQL query.
   Future<String> writeData(String query);
 
+  /// Executes a parameterized query against the database.
+  Future<dynamic> executeParameterizedQuery(String sql, List<String> params);
+
   /// Disconnects from the MS SQL Server database.
   Future<bool> disconnect();
 }

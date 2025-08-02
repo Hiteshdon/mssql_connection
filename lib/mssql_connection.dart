@@ -100,6 +100,23 @@ class MssqlConnection {
     }
   }
 
+  /// Executes a parameterized query against the database.
+  ///
+  /// This method uses prepared statements to prevent SQL injection attacks.
+  /// 
+  /// Parameters:
+  /// - [sql]: SQL query with placeholders ('?') for parameters.
+  /// - [params]: List of parameter values to bind to the query.
+  ///
+  /// Returns the query result for SELECT queries or affected rows count for INSERT/UPDATE/DELETE.
+  Future<dynamic> executeParameterizedQuery(String sql, List<String> params) {
+    try {
+      return MsSQLConnectionPlatform.instance.executeParameterizedQuery(sql, params);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Disconnects from the MS SQL Server database.
   Future<bool> disconnect() {
     try {

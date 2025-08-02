@@ -10,6 +10,7 @@ The `mssql_connection` plugin allows Flutter applications to seamlessly connect 
 
 - 🔄 **Cross-Platform Support**: Seamless Microsoft SQL Server integration for Android and Windows.
 - 📊 **Query Execution**: Execute SQL queries and retrieve data effortlessly in JSON format.
+- 🔒 **Parameterized Queries**: Secure database operations with prepared statements to prevent SQL injection.
 - ⏳ **Configurable Timeouts**: Set connection timeouts for secure and reliable operations.
 - 🧩 **Simplified API**: Developer-friendly API for Flutter apps.
 - 🔄 **Automatic Reconnection**: Robust connection handling during interruptions.
@@ -26,10 +27,10 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
 
    ```yaml
    dependencies:
-     mssql_connection: ^2.0.0
+     mssql_connection: ^2.1.0
    ```
 
-   Replace `^2.0.0` with the latest version.
+   Replace `^2.1.0` with the latest version.
 
 2. **Install Packages**:
    Run the following command to fetch the plugin:
@@ -107,6 +108,44 @@ String result = await mssqlConnection.writeData(query);
 
 ---
 
+### **🔒 Parameterized Queries (Recommended)**
+
+Execute secure database operations using parameterized queries with prepared statements to prevent SQL injection attacks:
+
+#### **Secure Data Retrieval**
+
+```dart
+String query = 'SELECT * FROM Users WHERE username = ? AND age > ?';
+List<String> params = ['john_doe', '25'];
+String result = await mssqlConnection.executeParameterizedQuery(query, params);
+
+// `result` contains data in JSON format, securely retrieved.
+```
+
+#### **Secure Data Insertion**
+
+```dart
+String insertQuery = 'INSERT INTO Users (username, email, age) VALUES (?, ?, ?)';
+List<String> insertParams = ['jane_doe', 'jane@example.com', '30'];
+String insertResult = await mssqlConnection.executeParameterizedQuery(insertQuery, insertParams);
+
+// `insertResult` contains details about the operation, e.g., affected rows.
+```
+
+#### **Secure Data Updates**
+
+```dart
+String updateQuery = 'UPDATE Users SET email = ? WHERE username = ?';
+List<String> updateParams = ['newemail@example.com', 'john_doe'];
+String updateResult = await mssqlConnection.executeParameterizedQuery(updateQuery, updateParams);
+
+// `updateResult` contains details about the operation, e.g., affected rows.
+```
+
+> 🔒 **Security Note**: Always use parameterized queries when dealing with user input to prevent SQL injection attacks. The `?` placeholders are safely replaced with the provided parameters using prepared statements.
+
+---
+
 ### **Disconnect**
 
 Close the database connection when it's no longer needed:
@@ -119,7 +158,25 @@ bool isDisconnected = await mssqlConnection.disconnect();
 
 ---
 
-## 🔄 Version 2.0.2 Updates
+## 🔄 Version 2.1.0 Updates
+
+### 🔒 Security Enhancements
+
+* ✅ **Parameterized Queries**: Added `executeParameterizedQuery` method with prepared statements to prevent SQL injection attacks.
+* ✅ **Cross-Platform Security**: Implemented secure parameter binding on both Windows (ODBC) and Android (JDBC) platforms.
+* ✅ **Memory Safety**: Fixed critical memory management issues in Windows parameter binding.
+
+### 🆕 New Features
+
+* ✅ **Secure API**: New `executeParameterizedQuery` method provides a safe alternative to direct query execution.
+* ✅ **Parameter Binding**: Automatic parameter type handling and binding across all supported platforms.
+* ✅ **Enhanced Error Handling**: Improved error reporting while maintaining security best practices.
+
+> 🔒 **Migration Note**: While existing `getData` and `writeData` methods remain functional for backward compatibility, we strongly recommend migrating to `executeParameterizedQuery` for all new development to ensure security best practices.
+
+---
+
+## 📋 Version 2.0.2 Updates
 
 ### ✅ Android
 

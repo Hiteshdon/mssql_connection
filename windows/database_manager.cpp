@@ -310,6 +310,203 @@ std::string DatabaseManager::writeData(const std::string& query) {
 	}
 }
 
+std::string DatabaseManager::executeParameterizedQuery(const std::string& sql, const std::vector<std::string>& params) {
+	try {
+		if (!m_isConnected) {
+			throw DatabaseException("Not connected to the database.");
+		}
+
+		SQLRETURN ret;
+
+		// Allocate statement handle
+		ret = SQLAllocHandle(SQL_HANDLE_STMT, m_conn, &m_stmt);
+		if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+			std::string errorMsg = printError(SQL_HANDLE_STMT, m_stmt);
+			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+			throw DatabaseException(errorMsg);
+		}
+
+		// Prepare the SQL statement
+		std::wstring wsql = ConvertUtf8ToWide(sql);
+		ret = SQLPrepareW(m_stmt, (SQLWCHAR*)wsql.c_str(), SQL_NTS);
+		if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+			std::string errorMsg = printError(SQL_HANDLE_STMT, m_stmt);
+			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+			throw DatabaseException(errorMsg);
+		}
+
+		// Convert and store parameters to ensure memory persistence
+		std::vector<std::wstring> wparams;
+		std::vector<SQLLEN> paramLengths;
+		wparams.reserve(params.size());
+		paramLengths.reserve(params.size());
+		
+		for (const auto& param : params) {
+			wparams.push_back(ConvertUtf8ToWide(param));
+			paramLengths.push_back(SQL_NTS); // Null-terminated string
+		}
+
+		// Bind parameters using persistent memory
+		for (size_t i = 0; i < wparams.size(); ++i) {
+			ret = SQLBindParameter(
+				m_stmt,                          // Statement handle
+				static_cast<SQLUSMALLINT>(i + 1), // Parameter number (1-based)
+				SQL_PARAM_INPUT,                 // Input parameter
+				SQL_C_WCHAR,                     // C data type
+				SQL_WVARCHAR,                    // SQL data type
+				wparams[i].length(),             // Column size
+				0,                               // Decimal digits
+				(SQLPOINTER)wparams[i].c_str(),  // Parameter value pointer
+				wparams[i].length() * sizeof(SQLWCHAR), // Buffer length
+				&paramLengths[i]                 // Length/indicator
+			);
+			
+			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+				std::string errorMsg = printError(SQL_HANDLE_STMT, m_stmt);
+				SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+				throw DatabaseException(errorMsg);
+			}
+		}
+
+		// Execute the prepared statement
+		ret = SQLExecute(m_stmt);
+		if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+			std::string errorMsg = printError(SQL_HANDLE_STMT, m_stmt);
+			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+			throw DatabaseException(errorMsg);
+		}
+
+		// Check if this is a SELECT query (has result set)
+		SQLSMALLINT numCols;
+		SQLNumResultCols(m_stmt, &numCols);
+		
+		if (numCols > 0) {
+			// This is a SELECT query, return results like getData
+			Document results(kArrayType);
+			Document::AllocatorType& allocator = results.GetAllocator();
+
+			// Fetch rows from the query result
+			while (SQLFetch(m_stmt) == SQL_SUCCESS) {
+				Value row(kObjectType);
+
+				for (SQLSMALLINT i = 1; i <= numCols; ++i) {
+					SQLWCHAR columnName[256];
+					SQLSMALLINT sqlDataType;
+					SQLLEN indicator;
+
+					// Get column information
+					SQLDescribeColW(m_stmt, i, columnName, sizeof(columnName), NULL, &sqlDataType, NULL, NULL, NULL);
+
+					// Column name as string
+					std::string narrowColumnName = convertSQLWCHARToString(columnName);
+					Value columnNameValue;
+					columnNameValue.SetString(narrowColumnName.c_str(), allocator);
+
+					// Column value based on its type
+					Value columnValue;
+					switch (sqlDataType) {
+					case SQL_INTEGER:
+					case SQL_TINYINT:
+					case SQL_SMALLINT:
+					case SQL_BIT: {
+						SQLINTEGER intValue;
+						SQLGetData(m_stmt, i, SQL_INTEGER, &intValue, sizeof(intValue), &indicator);
+						if (indicator != SQL_NULL_DATA) {
+							columnValue.SetInt(intValue);
+						}
+						else {
+							columnValue.SetNull();
+						}
+						break;
+					}
+					case SQL_FLOAT:
+					case SQL_DECIMAL:
+					case SQL_NUMERIC:
+					case SQL_DOUBLE: {
+						SQLDOUBLE doubleValue;
+						SQLGetData(m_stmt, i, SQL_DOUBLE, &doubleValue, sizeof(doubleValue), &indicator);
+						if (indicator != SQL_NULL_DATA) {
+							columnValue.SetDouble(doubleValue);
+						}
+						else {
+							columnValue.SetNull();
+						}
+						break;
+					}
+					default: {
+						std::wstring totalValue;
+						SQLWCHAR buffer[512] = {0};
+
+						while (true) {
+							memset(buffer, 0, sizeof(buffer));
+							SQLRETURN chunkRet = SQLGetData(m_stmt, i, SQL_C_WCHAR, buffer, sizeof(buffer), &indicator);
+
+							if (chunkRet == SQL_NO_DATA) {
+								break;
+							}
+
+							if (indicator == SQL_NULL_DATA) {
+								columnValue.SetNull();
+								break;
+							}
+
+							if (SQL_SUCCEEDED(chunkRet)) {
+								totalValue.append(buffer);
+								if (chunkRet == SQL_SUCCESS) {
+									break;
+								}
+							} else {
+								columnValue.SetNull();
+								break;
+							}
+						}
+
+						if (indicator != SQL_NULL_DATA) {
+							std::string narrowCharValue = convertSQLWCHARToString(reinterpret_cast<const SQLWCHAR*>(totalValue.c_str()));
+							columnValue.SetString(narrowCharValue.c_str(), allocator);
+						}
+						else {
+							columnValue.SetNull();
+						}
+						break;
+					}
+					}
+
+					// Add column name-value pair to row object
+					row.AddMember(columnNameValue, columnValue, allocator);
+				}
+
+				// Push row into the result array
+				results.PushBack(row, allocator);
+			}
+
+			// Convert result into a string
+			StringBuffer buffer;
+			PrettyWriter<StringBuffer> writer(buffer);
+			results.Accept(writer);
+
+			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+			return buffer.GetString();
+		}
+		else {
+			// This is an INSERT/UPDATE/DELETE query, return affected rows like writeData
+			SQLLEN affectedRows;
+			SQLRowCount(m_stmt, &affectedRows);
+
+			SQLFreeHandle(SQL_HANDLE_STMT, m_stmt);
+
+			// Returning affected rows in JSON format
+			return "{ \"affectedRows\": " + std::to_string(affectedRows) + " }";
+		}
+	}
+	catch (const DatabaseException& e) {
+		throw e;
+	}
+	catch (...) {
+		throw DatabaseException("An unknown error occurred in executeParameterizedQuery.");
+	}
+}
+
 std::string DatabaseManager::printError(SQLSMALLINT handleType, SQLHANDLE handle) {
 	SQLWCHAR sqlState[SQL_SQLSTATE_SIZE + 1], message[SQL_MAX_MESSAGE_LENGTH];
 	SQLINTEGER nativeError;
