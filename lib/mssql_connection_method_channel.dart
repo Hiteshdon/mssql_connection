@@ -61,6 +61,29 @@ class MethodChannelMsSQLConnection extends MsSQLConnectionPlatform {
   }
 
   @override
+  Future<dynamic> executeParameterizedQuery(String sql, List<String> params) async {
+    try {
+      final result = await methodChannel.invokeMethod('executeParameterizedQuery', {
+        'sql': sql,
+        'params': params,
+      });
+      
+      // Handle different result types from Android
+      if (result is List) {
+        // This is a SELECT query result
+        return "[${result.join(",")}]";
+      } else if (result is String) {
+        // This is an INSERT/UPDATE/DELETE result (JSON string with affectedRows)
+        return result;
+      } else {
+        return result;
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<bool> disconnect() async {
     try {
       final bool? result = await methodChannel.invokeMethod<bool>('disconnect');

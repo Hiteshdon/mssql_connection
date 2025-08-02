@@ -73,6 +73,21 @@ class MethodChannelMsSQLConnectionWindows extends MsSQLConnectionPlatform {
   }
 
   @override
+  Future<dynamic> executeParameterizedQuery(String sql, List<String> params) async {
+    try {
+      final dynamic result = await methodChannel.invokeMethod('executeParameterizedQuery', {
+        'sql': sql,
+        'params': params,
+      });
+      return result;
+    } on PlatformException catch (e) {
+      throw refineError(e.message ?? e.toString());
+    } catch (e) {
+      throw refineError(e.toString());
+    }
+  }
+
+  @override
   Future<bool> disconnect() async {
     try {
       final bool? result = await methodChannel.invokeMethod<bool>('disconnect');

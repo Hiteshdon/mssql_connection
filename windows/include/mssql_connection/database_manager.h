@@ -47,6 +47,9 @@ public:
     // Write data to the database
     std::string writeData(const std::string& query);
 
+    // Execute parameterized query with prepared statements
+    std::string executeParameterizedQuery(const std::string& sql, const std::vector<std::string>& params);
+
     // Error handling
     std::string printError(SQLSMALLINT handleType, SQLHANDLE handle);
 

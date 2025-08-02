@@ -64,6 +64,7 @@ class MssqlConnectionPlugin : FlutterPlugin, MethodCallHandler {
         "connect" -> connect(call, result)
         "getData" -> getData(call, result)
         "writeData" ->writeData(call, result)
+        "executeParameterizedQuery" -> executeParameterizedQuery(call, result)
         "disconnect" -> disconnect(result)
         else -> result.notImplemented()
       }
@@ -119,6 +120,34 @@ class MssqlConnectionPlugin : FlutterPlugin, MethodCallHandler {
         result.success(JSONObject().put("affectedRows" , affectedRows).toString())
       } catch (e: Exception) {
         Log.e("MssqlConnectionPlugin", "Error writing data to the database: $e")
+        result.error("DATABASE_ERROR", e.message, null)
+      }
+    }
+  }
+
+  private suspend fun executeParameterizedQuery(call: MethodCall, result: Result) {
+    val sql = call.argument<String>("sql")
+    val params = call.argument<List<String>>("params") ?: emptyList()
+
+    withContext(Dispatchers.IO) {
+      try {
+        val queryResult = databaseManager.executeParameterizedQuery(sql!!, params)
+        
+        when (queryResult) {
+          is List<*> -> {
+            // This is a SELECT query result
+            result.success(queryResult)
+          }
+          is Int -> {
+            // This is an INSERT/UPDATE/DELETE result
+            result.success(JSONObject().put("affectedRows", queryResult).toString())
+          }
+          else -> {
+            result.error("UNEXPECTED_RESULT", "Unexpected result type from parameterized query", null)
+          }
+        }
+      } catch (e: Exception) {
+        Log.e("MssqlConnectionPlugin", "Error executing parameterized query: $e")
         result.error("DATABASE_ERROR", e.message, null)
       }
     }

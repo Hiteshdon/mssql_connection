@@ -128,6 +128,41 @@ namespace mssql_connection {
 				result->Error("UNKNOWN_ERROR", "An unknown error occurred during writeData.");
 			}
 		}
+		else if (method_name == "executeParameterizedQuery") {
+			try {
+				const auto* args = std::get_if<flutter::EncodableMap>(method_call.arguments());
+				if (args) {
+					auto sql = std::get<std::string>(args->at(flutter::EncodableValue("sql")));
+					
+					// Extract parameters list
+					std::vector<std::string> params;
+					const auto* params_list = std::get_if<flutter::EncodableList>(
+						&args->at(flutter::EncodableValue("params"))
+					);
+					
+					if (params_list) {
+						for (const auto& param : *params_list) {
+							params.push_back(std::get<std::string>(param));
+						}
+					}
+
+					std::string response = databaseManager.executeParameterizedQuery(sql, params);
+					result->Success(flutter::EncodableValue(response));
+				}
+				else {
+					result->Error("Invalid Arguments", "Expected a map with sql and params.");
+				}
+			}
+			catch (const DatabaseException& e) {
+				result->Error("DATABASE_ERROR", e.what());
+			}
+			catch (const std::exception& e) {
+				result->Error("UNKNOWN_ERROR", e.what());
+			}
+			catch (...) {
+				result->Error("UNKNOWN_ERROR", "An unknown error occurred during executeParameterizedQuery.");
+			}
+		}
 		else {
 			result->NotImplemented();
 		}
