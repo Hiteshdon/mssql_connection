@@ -1,0 +1,33 @@
+digraph "bcp_batch"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="bcp_batch",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Commit a set of rows to the table."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_bcp_done",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#ade7df2db455b61edc83819ad60edb339",tooltip="Tell we finished sending BCP data to server."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_flush_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga5feb53554e8917a81bbbc332163a61fb",tooltip="Flush packet to server."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_process_simple\l_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gaeeb1562044786ea17bea361ed83e6946",tooltip="Process results for simple query as \"SET TEXTSIZE\" or \"USE dbname\" If the statement returns results,..."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node1 -> Node99 [id="edge5_Node000001_Node000099",color="steelblue1",style="solid",tooltip=" "];
+  Node99 [id="Node000099",label="tds_bcp_start",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a8208eef2a3974ae1f0cf3c8c8ab011ce",tooltip="Start sending BCP data to server."];
+  Node99 -> Node100 [id="edge6_Node000099_Node000100",color="steelblue1",style="solid",tooltip=" "];
+  Node100 [id="Node000100",label="tds7_bcp_send_colmetadata",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a4daaa551e54dbd978650e2eef89e09ff",tooltip="Send BCP metadata to server."];
+  Node100 -> Node101 [id="edge7_Node000100_Node000101",color="steelblue1",style="solid",tooltip=" "];
+  Node101 [id="Node000101",label="tds_convert_string",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#gad5b76c688898b86984d09628f030d01c",tooltip="Convert a string in an allocated buffer."];
+  Node100 -> Node14 [id="edge8_Node000100_Node000014",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="tds_dstr_cstr",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#gac536f0e4d77d3cff5702719362ec1766",tooltip="Returns a C version (NUL terminated string) of dstr."];
+  Node100 -> Node102 [id="edge9_Node000100_Node000102",color="steelblue1",style="solid",tooltip=" "];
+  Node102 [id="Node000102",label="tds_dstr_len",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga396f139e4f886ac1b224a735138e73dd",tooltip="Returns the length of the string in bytes."];
+  Node99 -> Node4 [id="edge10_Node000099_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node99 -> Node103 [id="edge11_Node000099_Node000103",color="steelblue1",style="solid",tooltip=" "];
+  Node103 [id="Node000103",label="tds_submit_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga5a29ae7f99d089dc3cea85ec6ee5f3ab",tooltip="Sends a language string to the database server for processing."];
+  Node103 -> Node104 [id="edge12_Node000103_Node000104",color="steelblue1",style="solid",tooltip=" "];
+  Node104 [id="Node000104",label="tds_submit_query_params",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga95e0fccedc459a4404f496eec74a369a",tooltip="Sends a language string to the database server for processing."];
+  Node104 -> Node101 [id="edge13_Node000104_Node000101",color="steelblue1",style="solid",tooltip=" "];
+}

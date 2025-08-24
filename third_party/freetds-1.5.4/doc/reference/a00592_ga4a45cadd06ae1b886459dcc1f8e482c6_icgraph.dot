@@ -1,0 +1,45 @@
+digraph "tds_lookup_dynamic"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_lookup_dynamic",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Finds a dynamic given string id."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_alloc_dynamic",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00589.html#ga69559de43b47f4a9e2eecc7a56527444",tooltip="Allocate a dynamic statement."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds71_submit_prepexec",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga08877c101704bebe4fa57e0849dc272d",tooltip="Creates a temporary stored procedure in the server and execute it."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_submit_execdirect",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gae603aed795a4c5bb26ab159a11256996",tooltip="Submit a prepared query with parameters."];
+  Node2 -> Node5 [id="edge4_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_submit_prepare",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga74eb08c3a1c85be8ac9db428842c8b9d",tooltip="Creates a temporary stored procedure in the server."];
+  Node1 -> Node6 [id="edge5_Node000001_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_process_dynamic",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga5cfc0340d8d717e67f60037e029b2142",tooltip="tds_process_dynamic() finds the element of the dyns array for the id"];
+  Node6 -> Node7 [id="edge6_Node000006_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_process_tokens",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node7 -> Node8 [id="edge7_Node000007_Node000008",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="_bcp_exec_out",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00578.html#gae67546338cb9542a4902aa914f57f314",tooltip=" "];
+  Node7 -> Node10 [id="edge8_Node000007_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="dbcanquery",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00575.html#ga559e24ba70d0d96c3469eb6ab8f74e05",tooltip="Cancel the query currently being retrieved, discarding all pending rows."];
+  Node7 -> Node12 [id="edge9_Node000007_Node000012",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="dbnumrets",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00576.html#gaff09873008411a0573f6d1a9e6c7cf4b",tooltip="Get count of output parameters filled by a stored procedure."];
+  Node7 -> Node16 [id="edge10_Node000007_Node000016",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node16 [id="Node000016",label="dbreadtext",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gadd5685565c8c6c86079e17b8a73b324c",tooltip="Fetch part of a text or image value from the server."];
+  Node7 -> Node17 [id="edge11_Node000007_Node000017",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node17 [id="Node000017",label="dbsqlok",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00575.html#gae1f50a6a2c31fda57cb481922b06841e",tooltip="Wait for results of a query from the server."];
+  Node17 -> Node19 [id="edge12_Node000017_Node000019",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node19 [id="Node000019",label="dbwritetext",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga548153eb2eae76c48aa9d4b72258dc1c",tooltip="Send text or image data to the server."];
+  Node7 -> Node20 [id="edge13_Node000007_Node000020",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node20 [id="Node000020",label="dbsqlsend",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00575.html#gac980139b9cea03cf93e373d425991481",tooltip="Transmit the command buffer to the server."];
+  Node7 -> Node19 [id="edge14_Node000007_Node000019",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 -> Node21 [id="edge15_Node000007_Node000021",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node21 [id="Node000021",label="tds_bcp_init",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00254.html#ac6610c72bd31bad5378f760fa9b12d66",tooltip="Initialize BCP information."];
+  Node7 -> Node23 [id="edge16_Node000007_Node000023",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node23 [id="Node000023",label="tds_process_cancel",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gaf233e79967f82f4e0dd4d11524917a34",tooltip=" "];
+  Node7 -> Node25 [id="edge17_Node000007_Node000025",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node25 [id="Node000025",label="tds_process_simple\l_query",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gaeeb1562044786ea17bea361ed83e6946",tooltip="Process results for simple query as \"SET TEXTSIZE\" or \"USE dbname\" If the statement returns results,..."];
+  Node25 -> Node38 [id="edge18_Node000025_Node000038",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node38 [id="Node000038",label="tds_submit_optioncmd",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gaf0da49585d39e99780a004ee2ca23479",tooltip="Send option commands to server."];
+  Node7 -> Node38 [id="edge19_Node000007_Node000038",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

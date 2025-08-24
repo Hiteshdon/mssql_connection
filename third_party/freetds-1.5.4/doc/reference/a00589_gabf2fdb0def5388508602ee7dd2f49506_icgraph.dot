@@ -1,0 +1,24 @@
+digraph "tds_release_dynamic"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_release_dynamic",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Frees dynamic statement."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds71_submit_prepexec",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga08877c101704bebe4fa57e0849dc272d",tooltip="Creates a temporary stored procedure in the server and execute it."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_process_pending\l_closes",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga69902dffb299d62a799888e0fa3ccd68",tooltip="Attempt to close all deferred closes (dynamics and cursors)."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_process_end",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga6ee2e7af38af768611b8bf4b79c36f46",tooltip="tds_process_end() processes any of the DONE, DONEPROC, or DONEINPROC tokens."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_process_default\l_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#ga39453d084f3f780ac4602d4abf2839f7",tooltip="tds_process_default_tokens() is a catch all function that is called to process tokens not known to ot..."];
+  Node5 -> Node7 [id="edge5_Node000005_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node4 -> Node7 [id="edge6_Node000004_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node36 [id="edge7_Node000001_Node000036",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node36 [id="Node000036",label="tds_submit_execdirect",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gae603aed795a4c5bb26ab159a11256996",tooltip="Submit a prepared query with parameters."];
+  Node1 -> Node37 [id="edge8_Node000001_Node000037",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node37 [id="Node000037",label="tds_submit_prepare",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga74eb08c3a1c85be8ac9db428842c8b9d",tooltip="Creates a temporary stored procedure in the server."];
+}

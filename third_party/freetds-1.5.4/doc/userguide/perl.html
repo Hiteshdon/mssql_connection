@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Perl</title><link rel="stylesheet" type="text/css" href="userguide.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="FreeTDS User Guide" /><link rel="up" href="software.html" title="Chapter 7. How to get what works with it working" /><link rel="prev" href="software.html" title="Chapter 7. How to get what works with it working" /><link rel="next" href="php.html" title="PHP" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Perl</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="software.html">Prev</a> </td><th width="60%" align="center">Chapter 7. How to get what works with it working</th><td width="20%" align="right"> <a accesskey="n" href="php.html">Next</a></td></tr></table><hr /></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="perl"></a>Perl</h2></div></div></div><p>There are a few ways to use <span class="productname">Perl</span> to connect to a <span class="productname">SQL Server</span> using <span class="productname">FreeTDS</span>.</p><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="DBD.ODBC"></a>DBD::ODBC</h3></div></div></div><p>The recommended choice is <code class="systemitem">DBD::ODBC</code> with the <span class="productname">FreeTDS</span> <code class="systemitem">ODBC</code> driver.</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="DBD.Sybase"></a>DBD::Sybase</h3></div></div></div><p>You may also use <code class="systemitem">DBD::Sybase</code> from Michael Peppler.  Despite the name it works for any Sybase or Microsoft <span class="productname">SQL Server</span>.  <code class="systemitem">DBD::Sybase</code> uses the <code class="systemitem">CT-Library</code> <acronym class="acronym">API</acronym> and works well. However the project has not been updated for a while.</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="Sybperl"></a>Sybperl</h3></div></div></div><p>Finally, you can use <code class="systemitem">Sybperl</code>.  Scripts written against <code class="systemitem">Sybperl</code> will not run against other databases the way DBI scripts will.  However, it will be familiar ground for those who know <code class="systemitem">DB-Library</code>.</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="Perlmodules"></a>Building and using the Perl modules</h3></div></div></div><div class="example"><a id="e.g.DBD.ODBC.build"></a><p class="title"><strong>Example 7.2. Building <code class="systemitem">DBD::ODBC</code></strong></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">$ </code><strong class="userinput"><code>cd DBD-ODBC-0.28</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>export SYBASE=/usr/local/freetds</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>export ODBCHOME=/usr/local</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>export DBI_DSN=dbi:ODBC:JDBC</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>export DBI_USER=guest</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>export DBI_PASS=sybase</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>perl Makefile.PL</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>make</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>sudo make install</code></strong></pre></div></div><p><br class="example-break" />
+	</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="../images/note.gif" /></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>We used the public  <acronym class="acronym">JDBC</acronym> server logins for our configuration here.  You'll want to replace these with ones suitable to your environment.</p></td></tr></table></div><div class="example"><a id="e.g.DBD.ODBC.connect"></a><p class="title"><strong>Example 7.3. Connect to a server with <code class="systemitem">DBD::ODBC</code></strong></p><div class="example-contents"><pre class="programlisting">
+	#!/usr/bin/env perl
+	#
+	use DBI;
+	
+	my $dbh = DBI-&gt;connect("dbi:ODBC:JDBC", 'guest', 'sybase', {PrintError =&gt; 0});
+	
+	die "Unable for connect to server $DBI::errstr"
+		unless $dbh;
+	
+	my $rc;
+	my $sth;
+	
+	$sth = $dbh-&gt;prepare("select \@\@servername");
+	if($sth-&gt;execute) {
+		while(@dat = $sth-&gt;fetchrow) {
+			print "@dat\n";
+		}
+	}
+	</pre></div></div><p><br class="example-break" /></p><div class="example"><a id="e.g.DBD.Sybase.build"></a><p class="title"><strong>Example 7.4. Building <code class="systemitem">DBD::Sybase</code></strong></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">$ </code><strong class="userinput"><code>cd DBD-Sybase-0.91</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>export SYBASE=/usr/local/freetds</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>perl Makefile.PL</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>make</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>sudo make install</code></strong></pre></div></div><p><br class="example-break" />
+
+				There will be some output about missing libraries after <strong class="userinput"><code>perl Makefile.PL</code></strong>. These are normal.</p><p>The following example will attach to Sybase's public <acronym class="acronym">JDBC</acronym> server and run a simple query (it can be found in <code class="filename">samples/test.pl</code>):
+
+				</p><div class="example"><a id="e.g.DBD.Sybase.Connect"></a><p class="title"><strong>Example 7.5. Connect to a server with <code class="systemitem">DBD::Sybase</code></strong></p><div class="example-contents"><pre class="programlisting">
+	#!/usr/bin/env perl
+	#
+	use DBI;
+	
+	my $dbh = DBI-&gt;connect("dbi:Sybase:server=JDBC", 'guest', 'sybase', {PrintError =&gt; 0});
+	
+	die "Unable for connect to server $DBI::errstr"
+		unless $dbh;
+	
+	my $rc;
+	my $sth;
+	
+	$sth = $dbh-&gt;prepare("select \@\@servername");
+	if($sth-&gt;execute) {
+		while(@dat = $sth-&gt;fetchrow) {
+			print "@dat\n";
+		}
+	}
+	</pre></div></div><p><br class="example-break" />
+
+You'll note this is the same program as for <code class="systemitem">DBD::ODBC</code> with the exception of the <code class="function">connect</code> statement.  Welcome to the magic of DBI!</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="software.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="software.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="php.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 7. How to get what works with it working </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> PHP</td></tr></table></div></body></html>

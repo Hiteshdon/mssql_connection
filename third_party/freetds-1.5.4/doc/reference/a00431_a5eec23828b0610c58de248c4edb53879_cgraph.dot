@@ -1,0 +1,42 @@
+digraph "tds_bcp_start_copy_in"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_bcp_start_copy_in",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Start bulk copy to server."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_bcp_start",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a8208eef2a3974ae1f0cf3c8c8ab011ce",tooltip="Start sending BCP data to server."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds7_bcp_send_colmetadata",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a4daaa551e54dbd978650e2eef89e09ff",tooltip="Send BCP metadata to server."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_convert_string",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#gad5b76c688898b86984d09628f030d01c",tooltip="Convert a string in an allocated buffer."];
+  Node3 -> Node8 [id="edge4_Node000003_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="tds_dstr_cstr",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#gac536f0e4d77d3cff5702719362ec1766",tooltip="Returns a C version (NUL terminated string) of dstr."];
+  Node3 -> Node9 [id="edge5_Node000003_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="tds_dstr_len",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga396f139e4f886ac1b224a735138e73dd",tooltip="Returns the length of the string in bytes."];
+  Node2 -> Node10 [id="edge6_Node000002_Node000010",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="tds_process_simple\l_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gaeeb1562044786ea17bea361ed83e6946",tooltip="Process results for simple query as \"SET TEXTSIZE\" or \"USE dbname\" If the statement returns results,..."];
+  Node10 -> Node11 [id="edge7_Node000010_Node000011",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node2 -> Node102 [id="edge8_Node000002_Node000102",color="steelblue1",style="solid",tooltip=" "];
+  Node102 [id="Node000102",label="tds_submit_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga5a29ae7f99d089dc3cea85ec6ee5f3ab",tooltip="Sends a language string to the database server for processing."];
+  Node102 -> Node103 [id="edge9_Node000102_Node000103",color="steelblue1",style="solid",tooltip=" "];
+  Node103 [id="Node000103",label="tds_submit_query_params",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga95e0fccedc459a4404f496eec74a369a",tooltip="Sends a language string to the database server for processing."];
+  Node103 -> Node4 [id="edge10_Node000103_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node103 -> Node42 [id="edge11_Node000103_Node000042",color="steelblue1",style="solid",tooltip=" "];
+  Node42 [id="Node000042",label="tds_dstr_isempty",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga197c6af67f2e7469d06c2aa055917b1e",tooltip="test if string is empty"];
+  Node1 -> Node122 [id="edge12_Node000001_Node000122",color="steelblue1",style="solid",tooltip=" "];
+  Node122 [id="Node000122",label="tds_bcp_start_insert_stmt",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#ab4d7e5309152f54613d52c8469a07fd8",tooltip="Prepare the query to be sent to server to request BCP information."];
+  Node122 -> Node123 [id="edge13_Node000122_Node000123",color="steelblue1",style="solid",tooltip=" "];
+  Node123 [id="Node000123",label="tds7_build_bulk_insert_stmt",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a3118c7232bc9c3e47f8ba872bb39e967",tooltip="Help to build query to be sent to server."];
+  Node123 -> Node8 [id="edge14_Node000123_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node123 -> Node9 [id="edge15_Node000123_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node123 -> Node119 [id="edge16_Node000123_Node000119",color="steelblue1",style="solid",tooltip=" "];
+  Node119 [id="Node000119",label="tds_get_column_declaration",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga50d62edeb2a432e2dc668263f3f958ff",tooltip="Return declaration for column (like \"varchar(20)\")."];
+  Node123 -> Node97 [id="edge17_Node000123_Node000097",color="steelblue1",style="solid",tooltip=" "];
+  Node97 [id="Node000097",label="tds_quote_id",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga8d8f2f1c91635ee95f30722208ae3043",tooltip="Quote an id."];
+  Node122 -> Node8 [id="edge18_Node000122_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node122 -> Node42 [id="edge19_Node000122_Node000042",color="steelblue1",style="solid",tooltip=" "];
+}

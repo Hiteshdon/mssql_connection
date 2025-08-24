@@ -1,0 +1,41 @@
+digraph "tds_freeze_abort"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_freeze_abort",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Discard all data written after the freeze."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds5_put_params",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga4f1f0a4f77bc4ea1440dfdebc19a157c",tooltip="Send parameters to server."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_submit_execdirect",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gae603aed795a4c5bb26ab159a11256996",tooltip="Submit a prepared query with parameters."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_submit_execute",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga3e7b4793c6f799fbc6c174f673bb5b32",tooltip="Sends a previously prepared dynamic statement to the server."];
+  Node2 -> Node5 [id="edge4_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_submit_query_params",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga95e0fccedc459a4404f496eec74a369a",tooltip="Sends a language string to the database server for processing."];
+  Node5 -> Node6 [id="edge5_Node000005_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_submit_query",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga5a29ae7f99d089dc3cea85ec6ee5f3ab",tooltip="Sends a language string to the database server for processing."];
+  Node6 -> Node3 [id="edge6_Node000006_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node26 [id="edge7_Node000002_Node000026",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node26 [id="Node000026",label="tds_submit_rpc",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga5f071b94ad7889690762dc85646c74ab",tooltip="Calls a RPC from server."];
+  Node26 -> Node27 [id="edge8_Node000026_Node000027",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node27 [id="Node000027",label="dbrpcsend",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00576.html#gafa4dfd181be21e49c397f7daaa9cf96c",tooltip="Execute the procedure and free associated memory."];
+  Node1 -> Node28 [id="edge9_Node000001_Node000028",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node28 [id="Node000028",label="tds71_submit_prepexec",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga08877c101704bebe4fa57e0849dc272d",tooltip="Creates a temporary stored procedure in the server and execute it."];
+  Node1 -> Node29 [id="edge10_Node000001_Node000029",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node29 [id="Node000029",label="tds7_write_param_def\l_from_params",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga6513afd79629f7a928e1d3da9f56dee1",tooltip="Write string with parameters definition, useful for TDS7+."];
+  Node29 -> Node5 [id="edge11_Node000029_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node30 [id="edge12_Node000001_Node000030",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node30 [id="Node000030",label="tds7_write_param_def\l_from_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga24345856c16b15aa3e84459c2f551320",tooltip="Write string with parameters definition, useful for TDS7+."];
+  Node30 -> Node28 [id="edge13_Node000030_Node000028",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node30 -> Node3 [id="edge14_Node000030_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node30 -> Node31 [id="edge15_Node000030_Node000031",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node31 [id="Node000031",label="tds_submit_prepare",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga74eb08c3a1c85be8ac9db428842c8b9d",tooltip="Creates a temporary stored procedure in the server."];
+  Node30 -> Node5 [id="edge16_Node000030_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node32 [id="edge17_Node000001_Node000032",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node32 [id="Node000032",label="tds_set_state",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01485.html#a16db200d2281f76fe46fc1cbe37ca9df",tooltip="Set state of TDS connection, with logging and checking."];
+  Node1 -> Node3 [id="edge18_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node31 [id="edge19_Node000001_Node000031",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node5 [id="edge20_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

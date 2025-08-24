@@ -1,0 +1,31 @@
+digraph "tds_dstr_dup"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_dstr_dup",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Duplicate a string from another dynamic string."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds5_process_result2",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gabe2bdd5a41ce067cb31aef18ff81cb1c",tooltip="tds5_process_result2() is the new TDS 5.0 result set processing routine."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_process_default\l_tokens",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga39453d084f3f780ac4602d4abf2839f7",tooltip="tds_process_default_tokens() is a catch all function that is called to process tokens not known to ot..."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_process_info",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga65a2316369529731732f200c190d05d6",tooltip="tds_process_info() is called for INFO, ERR, or EED tokens and is responsible for calling the CLI's me..."];
+  Node4 -> Node3 [id="edge4_Node000004_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 -> Node5 [id="edge5_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node5 -> Node19 [id="edge6_Node000005_Node000019",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node19 [id="Node000019",label="tds_bcp_init",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00254.html#ac6610c72bd31bad5378f760fa9b12d66",tooltip="Initialize BCP information."];
+  Node3 -> Node35 [id="edge7_Node000003_Node000035",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node35 [id="Node000035",label="tds_process_login_tokens",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga93945b42d45ee28ae1296b35a1c1e9bb",tooltip="tds_process_login_tokens() is called after sending the login packet to the server."];
+  Node3 -> Node5 [id="edge8_Node000003_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node5 [id="edge9_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node19 [id="edge10_Node000001_Node000019",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node36 [id="edge11_Node000001_Node000036",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node36 [id="Node000036",label="tds_read_config_info",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00586.html#ga9ff2436ea56ddcdecf984acf46ce4b90",tooltip="tds_read_config_info() will fill the tds connection structure based on configuration information gath..."];
+  Node36 -> Node37 [id="edge12_Node000036_Node000037",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node37 [id="Node000037",label="tdsdbopen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00581.html#gae6da75d7b9e7b567890fc83c9459d824",tooltip="Form a connection with the server."];
+  Node37 -> Node38 [id="edge13_Node000037_Node000038",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node38 [id="Node000038",label="dbopen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00092.html#af2b7a0ebad53fe7e4e0eda3bbdb89de3",tooltip="Normally not used."];
+}

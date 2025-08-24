@@ -1,0 +1,26 @@
+digraph "tds_datain_stream_init"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_datain_stream_init",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Initialize a data input stream."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="read_and_convert",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga676c4dee6522815b16fdc8e448e43590",tooltip="For UTF-8 and similar, tds_iconv() may encounter a partial sequence when the chunk boundary is not al..."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_get_char_data",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga8d214089b6e97fc0da5e0be09f216d73",tooltip="Fetch character data the wire."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_generic_get",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00263.html#abac4d689e0e31e80587f89247c6395a4",tooltip="Read a data from wire."];
+  Node2 -> Node5 [id="edge4_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_get_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga90f080e6e9448feac15dee1370d66802",tooltip="Fetch a string from the wire."];
+  Node5 -> Node6 [id="edge5_Node000005_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_alloc_get_string",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gafb26aba5d935e40b87b95e21a5185848",tooltip="Reads a string from wire in a new allocated buffer."];
+  Node5 -> Node46 [id="edge6_Node000005_Node000046",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node46 [id="Node000046",label="tds_dstr_get",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00591.html#ga017c427e9599c031be5c555cb32abe2c",tooltip="Reads a string from wire and put in a DSTR."];
+  Node5 -> Node58 [id="edge7_Node000005_Node000058",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node58 [id="Node000058",label="tds_generic_put",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00263.html#a84e17808683ba2dd956e811a42e23176",tooltip="Write data to wire."];
+  Node5 -> Node59 [id="edge8_Node000005_Node000059",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node59 [id="Node000059",label="tds_process_dynamic",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#ga5cfc0340d8d717e67f60037e029b2142",tooltip="tds_process_dynamic() finds the element of the dyns array for the id"];
+  Node1 -> Node4 [id="edge9_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

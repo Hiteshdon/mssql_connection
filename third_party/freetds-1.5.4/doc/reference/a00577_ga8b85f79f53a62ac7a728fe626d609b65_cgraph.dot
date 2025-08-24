@@ -1,0 +1,21 @@
+digraph "bcp_done"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="bcp_done",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Conclude the transfer of data from program variables."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="_bcp_free_storage",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00578.html#gaa134c1c3ccc4326e693adb8357272f1d",tooltip=" "];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="_bcp_free_columns",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00578.html#gacf69ac4cbe8e3c3e6ea665e31e5e85b8",tooltip=" "];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_bcp_done",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#ade7df2db455b61edc83819ad60edb339",tooltip="Tell we finished sending BCP data to server."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_flush_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga5feb53554e8917a81bbbc332163a61fb",tooltip="Flush packet to server."];
+  Node4 -> Node6 [id="edge5_Node000004_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_process_simple\l_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gaeeb1562044786ea17bea361ed83e6946",tooltip="Process results for simple query as \"SET TEXTSIZE\" or \"USE dbname\" If the statement returns results,..."];
+  Node6 -> Node7 [id="edge6_Node000006_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+}

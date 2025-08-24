@@ -1,0 +1,16 @@
+digraph "tds_get_uint"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_get_uint",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Get an uint32 from the server."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_get_n",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#gae777dd57e8d1bb40349d7d7d8434fddf",tooltip="Get N bytes from the buffer and return them in the already allocated space   given to us."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_close_socket",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga3e3f76009fce5ceedb2f42bb2c9aed2e",tooltip="Close current socket."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_read_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga410619783bdf2bb60b0f27a5578e0e07",tooltip="Read in one 'packet' from the server."];
+  Node4 -> Node3 [id="edge4_Node000004_Node000003",color="steelblue1",style="solid",tooltip=" "];
+}

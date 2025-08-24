@@ -1,0 +1,20 @@
+digraph "dbconvert"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="dbconvert",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="cf."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="dbconvert_ps",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga8b00d5cdcaa20cba13fa2e03d52a443e",tooltip="Convert one datatype to another."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="dbgetnull",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00089.html#aea6a865806d454280126de940478c214",tooltip=" "];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="dbperror",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00581.html#ga302a4ce6559b81808e3be51615cd1b67",tooltip="Call client-installed error handler."];
+  Node2 -> Node4 [id="edge4_Node000002_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node7 [id="edge5_Node000002_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_convert",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00587.html#gad83c146aa5ba3f1515557d6b5248494a",tooltip="tds_convert convert a type to another."];
+  Node2 -> Node8 [id="edge6_Node000002_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="tds_prdatatype",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00089.html#ac7a199aaeb82935f6d1dda2be551a089",tooltip="Returns type in string."];
+}

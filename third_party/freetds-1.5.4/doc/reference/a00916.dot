@@ -1,0 +1,19 @@
+digraph "cs_diag_msg_svr"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  Node1 [id="Node000001",label="cs_diag_msg_svr",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node1 [id="edge1_Node000001_Node000001",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" next",fontcolor="grey" ];
+  Node2 -> Node1 [id="edge2_Node000001_Node000002",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" servermsg",fontcolor="grey" ];
+  Node2 [id="Node000002",label="CS_SERVERMSG_INTERNAL",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a00914.html",tooltip=" "];
+  Node3 -> Node2 [id="edge3_Node000002_Node000003",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" small",fontcolor="grey" ];
+  Node3 [id="Node000003",label="CS_SERVERMSG_SMALL",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a00898.html",tooltip=" "];
+  Node4 -> Node2 [id="edge4_Node000002_Node000004",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" large",fontcolor="grey" ];
+  Node4 [id="Node000004",label="CS_SERVERMSG_LARGE",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a00902.html",tooltip=" "];
+  Node5 -> Node2 [id="edge5_Node000002_Node000005",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" common",fontcolor="grey" ];
+  Node5 [id="Node000005",label="CS_SERVERMSG_COMMON1",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a00906.html",tooltip=" "];
+  Node6 -> Node2 [id="edge6_Node000002_Node000006",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" user",fontcolor="grey" ];
+  Node6 [id="Node000006",label="_cs_servermsg",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a00886.html",tooltip=" "];
+}

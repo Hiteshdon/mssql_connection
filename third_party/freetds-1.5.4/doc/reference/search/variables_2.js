@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['cafile_0',['cafile',['../a01218.html#ad12291abe6678aa30b8c43ab8e75429c',1,'tds_login']]],
+  ['canonic_1',['canonic',['../a01238.html#aa9d3f1d6d994fcd5871ca41d7797ae95',1,'tds_encoding']]],
+  ['cb_2',['cb',['../a00746.html#afc81c17990646fe0ed1c9cce5a917487',1,'tds_pbcb']]],
+  ['certificate_5fhost_5fname_3',['certificate_host_name',['../a01218.html#a5a5a626c76dba2dd5b67755c65b8a0e6',1,'tds_login']]],
+  ['char_5fconv_4',['char_conv',['../a01250.html#ab3afb8272401bdb51064cdf910334159',1,'tds_column']]],
+  ['charset_5',['charset',['../a01278.html#a09756f0c4e0d588152c4dc3a8d019bcd',1,'tds_env']]],
+  ['column_5fcur_5fsize_6',['column_cur_size',['../a01250.html#ada14ba479a67762fc1bef78910ef4beb',1,'tds_column']]],
+  ['column_5fprec_7',['column_prec',['../a01250.html#a7ae346f8b1fdd364749825ca0863d166',1,'tds_column']]],
+  ['column_5fscale_8',['column_scale',['../a01250.html#ab73b012b3a9f08da8661dc230ec17d7f',1,'tds_column']]],
+  ['column_5fsize_9',['column_size',['../a01250.html#a2c2756c00a1099c82d4cfa4da2894672',1,'tds_column']]],
+  ['column_5ftype_10',['column_type',['../a01250.html#a7f08ecedc5835a4e81129c6b2b493947',1,'tds_column']]],
+  ['column_5fvarint_5fsize_11',['column_varint_size',['../a01250.html#a12914f03ee2f24fa3fe577060410770d',1,'tds_column']]],
+  ['crlfile_12',['crlfile',['../a01218.html#a15808ea4c259a779c63732f8c1067c54',1,'tds_login']]],
+  ['cur_5fcursor_13',['cur_cursor',['../a01310.html#aa708effeb88270302ab5524f0c0366ac',1,'tds_socket']]],
+  ['cur_5fdyn_14',['cur_dyn',['../a01310.html#afb404985164205ebdc9b0c18fabb47e2',1,'tds_socket']]],
+  ['current_5fresults_15',['current_results',['../a01310.html#a4b77fb56b92b93e413fcbb8ba5633ce4',1,'tds_socket']]],
+  ['current_5fstatement_16',['current_statement',['../a01090.html#acaf05aab946ae9dec9e06dd230839675',1,'_hdbc']]],
+  ['cursor_5fid_17',['cursor_id',['../a01274.html#a7b7d4cedf0cc7f890133f021d18af58c',1,'tds_cursor']]],
+  ['cursor_5fname_18',['cursor_name',['../a01274.html#afd459125b5c4d4ccbf77a7d6ca8a4aaa',1,'tds_cursor']]],
+  ['cursor_5frows_19',['cursor_rows',['../a01274.html#a7ec745adff5b2391e609e836c9f010cd',1,'tds_cursor']]],
+  ['cursor_5fsupport_20',['cursor_support',['../a01090.html#ae45d3601984f4773024a81394764d28d',1,'_hdbc']]],
+  ['cursors_21',['cursors',['../a01306.html#a42b972a1cd99c8f2f83b2cf5c635435a',1,'tds_connection']]]
+];

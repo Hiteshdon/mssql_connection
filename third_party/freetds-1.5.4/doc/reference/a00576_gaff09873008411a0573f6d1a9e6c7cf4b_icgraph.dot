@@ -1,0 +1,15 @@
+digraph "dbnumrets"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="dbnumrets",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Get count of output parameters filled by a stored procedure."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="dbretdata",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00576.html#ga61a32bcbc7b9d2522f6c85e91919f2c4",tooltip="Get value of an output parameter filled by a stored procedure."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="dbretlen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00576.html#gab705bf94be535e9d8fc4edc0f48c98b0",tooltip="Get size of an output parameter filled by a stored procedure."];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="dbretname",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00576.html#ga63dc384b5c0ee3086a171337e8c78317",tooltip="Get name of an output parameter filled by a stored procedure."];
+}

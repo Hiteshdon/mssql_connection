@@ -1,0 +1,116 @@
+name: FreeTDS Multi-Platform Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/**'
+      - 'third_party/freetds-1.5.4/**'
+      - '.github/workflows/freetds-multi.yml'
+
+jobs:
+  posix:
+    name: POSIX (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential automake libtool pkg-config
+
+      - name: Install deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install automake libtool pkg-config
+
+      - name: Build
+        run: |
+          bash scripts/build-posix.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-${{ runner.os }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-${{ runner.os }}
+          path: out-${{ runner.os }}/**/*
+
+  windows:
+    name: Windows (MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake
+        uses: lukka/get-cmake@v3.30.3
+
+      - name: Build with script
+        shell: pwsh
+        run: |
+          pwsh scripts/build-windows.ps1 `
+            "$env:GITHUB_WORKSPACE\third_party\freetds-1.5.4" `
+            "$env:GITHUB_WORKSPACE\out-windows"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-windows
+          path: out-windows/**/*
+
+  android:
+    name: Android (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK and CMake
+        run: |
+          sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1" "platforms;android-34"
+          echo "ANDROID_NDK=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Build (ABI ${{ matrix.abi }})
+        env:
+          ANDROID_NDK: ${{ env.ANDROID_NDK }}
+        run: |
+          bash scripts/build-android.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-android" "${{ matrix.abi }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-android-${{ matrix.abi }}
+          path: out-android/${{ matrix.abi }}/**/*
+
+  ios:
+    name: iOS XCFramework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          brew update
+          brew install automake libtool
+
+      - name: Build XCFramework
+        run: |
+          bash scripts/build-ios.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-ios"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-ios-xcframework
+          path: out-ios/FreeTDS.xcframework

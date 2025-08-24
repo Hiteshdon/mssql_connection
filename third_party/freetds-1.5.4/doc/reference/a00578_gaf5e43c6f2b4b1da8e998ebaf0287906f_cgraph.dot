@@ -1,0 +1,33 @@
+digraph "_bcp_read_hostfile"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="_bcp_read_hostfile",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="_bcp_convert_in",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01464.html#a4e7740b6f755d7d3f2502a47b7d71a85",tooltip="Convert column for input to a table."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_convert",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00587.html#gad83c146aa5ba3f1515557d6b5248494a",tooltip="tds_convert convert a type to another."];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="dbperror",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00581.html#ga302a4ce6559b81808e3be51615cd1b67",tooltip="Call client-installed error handler."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_dstr_cstr",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#gac536f0e4d77d3cff5702719362ec1766",tooltip="Returns a C version (NUL terminated string) of dstr."];
+  Node4 -> Node6 [id="edge5_Node000004_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_dstr_isempty",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga197c6af67f2e7469d06c2aa055917b1e",tooltip="test if string is empty"];
+  Node1 -> Node7 [id="edge6_Node000001_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_bcp_fread",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a86ac92bd8a3c61a413d27150ec9bc202",tooltip="Read a data file, passing the data through iconv()."];
+  Node7 -> Node8 [id="edge7_Node000007_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="tds_convert_stream",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#a9d8eb43a81ff58ab423dce0ce95b9564",tooltip="Reads and writes from a stream converting characters."];
+  Node8 -> Node9 [id="edge8_Node000008_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="tds_iconv",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00588.html#ga87db49044919f1bc84c0ff5e9ab00304",tooltip="Wrapper around iconv(3)."];
+  Node7 -> Node12 [id="edge9_Node000007_Node000012",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="tds_copy_stream",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#a50bc3749988d1c3c441044fc07ab44e4",tooltip="Reads and writes from a stream to another."];
+  Node7 -> Node13 [id="edge10_Node000007_Node000013",color="steelblue1",style="solid",tooltip=" "];
+  Node13 [id="Node000013",label="tds_dynamic_stream_init",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#a4f9e40da6941cb9407d0da5bc3030517",tooltip="Initialize a dynamic output stream."];
+  Node13 -> Node14 [id="edge11_Node000013_Node000014",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="tds_dynamic_stream\l_write",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a01479.html#abaf688c85ea04a2392103d519a55d04e",tooltip="Writes data to a dynamic allocated buffer."];
+  Node7 -> Node16 [id="edge12_Node000007_Node000016",color="steelblue1",style="solid",tooltip=" "];
+  Node16 [id="Node000016",label="tds_file_stream_read",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#a1b83c9db016b481aa1fa0352f976d50d",tooltip="Reads a chunk of data from file stream checking for terminator."];
+}

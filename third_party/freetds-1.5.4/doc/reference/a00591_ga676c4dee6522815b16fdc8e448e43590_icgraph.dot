@@ -1,0 +1,43 @@
+digraph "read_and_convert"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="read_and_convert",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="For UTF-8 and similar, tds_iconv() may encounter a partial sequence when the chunk boundary is not al..."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_get_char_data",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga8d214089b6e97fc0da5e0be09f216d73",tooltip="Fetch character data the wire."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_generic_get",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00263.html#abac4d689e0e31e80587f89247c6395a4",tooltip="Read a data from wire."];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_get_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga90f080e6e9448feac15dee1370d66802",tooltip="Fetch a string from the wire."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_alloc_get_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gafb26aba5d935e40b87b95e21a5185848",tooltip="Reads a string from wire in a new allocated buffer."];
+  Node5 -> Node6 [id="edge5_Node000005_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds71_read_table_names",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#ga7482b5730d880fcedbe9fcd609a550ce",tooltip="Reads table names for TDS 7.1+."];
+  Node5 -> Node41 [id="edge6_Node000005_Node000041",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node41 [id="Node000041",label="tds_process_env_chg",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#ga3e1b4df4410a86a563a8c155e7799720",tooltip="tds_process_env_chg() when ever certain things change on the server, such as database,..."];
+  Node5 -> Node42 [id="edge7_Node000005_Node000042",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node42 [id="Node000042",label="tds_read_namelist",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gaeaaed2ea1d8c827da1a0f5b419524ae1",tooltip="Reads list of names (usually table names)"];
+  Node4 -> Node45 [id="edge8_Node000004_Node000045",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node45 [id="Node000045",label="tds_dstr_get",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga017c427e9599c031be5c555cb32abe2c",tooltip="Reads a string from wire and put in a DSTR."];
+  Node45 -> Node46 [id="edge9_Node000045_Node000046",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node46 [id="Node000046",label="tds5_process_dyn_result2",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gae688b515631141acfbc41bbb91c8b921",tooltip="Process new TDS 5.0 token for describing output parameters."];
+  Node46 -> Node10 [id="edge10_Node000046_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node45 -> Node47 [id="edge11_Node000045_Node000047",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node47 [id="Node000047",label="tds5_process_result2",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabe2bdd5a41ce067cb31aef18ff81cb1c",tooltip="tds5_process_result2() is the new TDS 5.0 result set processing routine."];
+  Node47 -> Node10 [id="edge12_Node000047_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node45 -> Node48 [id="edge13_Node000045_Node000048",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node48 [id="Node000048",label="tds7_get_data_info",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#ga07cee55fd522cca16fb59b7a8f0b1376",tooltip="Reads data information from wire."];
+  Node45 -> Node51 [id="edge14_Node000045_Node000051",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node51 [id="Node000051",label="tds_get_data_info",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gad9b6b86f48be077fb44ac603845a0c27",tooltip="Reads data metadata from wire."];
+  Node45 -> Node56 [id="edge15_Node000045_Node000056",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node56 [id="Node000056",label="tds_process_colinfo",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#ga22c7f413d43fc0d511e122a3de389166",tooltip="Reads column information."];
+  Node4 -> Node57 [id="edge16_Node000004_Node000057",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node57 [id="Node000057",label="tds_generic_put",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00263.html#a84e17808683ba2dd956e811a42e23176",tooltip="Write data to wire."];
+  Node4 -> Node58 [id="edge17_Node000004_Node000058",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node58 [id="Node000058",label="tds_process_dynamic",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga5cfc0340d8d717e67f60037e029b2142",tooltip="tds_process_dynamic() finds the element of the dyns array for the id"];
+  Node58 -> Node10 [id="edge18_Node000058_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

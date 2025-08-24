@@ -1,0 +1,74 @@
+Merge: 569401e6 65efc2d5
+Author: Frediano Ziglio <freddy77@gmail.com>
+Date:   Wed Jun 25 17:15:09 2025 +0100
+
+    Merge test for vasprintf for VMS
+
+Author: Craig A. Berry <craigberry@mac.com>
+Date:   Tue Jun 24 10:38:20 2025 -0500
+
+    VMS has had vsnprintf for a long time
+
+    And this allows for a better vasprintf fallback for systems where
+    vasprintf is not available.
+
+Author: Craig A. Berry <craigberry@mac.com>
+Date:   Mon Jun 23 07:26:27 2025 -0500
+
+    Better test for vasprintf on VMS
+
+    Recentish CRTLs do have it, but the test I added 23 years ago was
+    not correctly detecting it.
+
+Author: Frediano Ziglio <freddy77@gmail.com>
+Date:   Wed Jun 18 11:08:10 2025 +0100
+
+    tds: Fix bulk copy in for Microsoft XML type
+
+    As documented, and tested, the protocol requires the usage
+    of NVARCHAR type, not XML, which is refused causing an error.
+
+Merge: 349445e4 6c532e2a
+Author: Frediano Ziglio <freddy77@gmail.com>
+Date:   Sat May 31 17:43:29 2025 +0100
+
+    Fix conversion bound checks, tsql message formatting
+
+Author: Frediano Ziglio <freddy77@gmail.com>
+Date:   Sat May 31 17:02:34 2025 +0100
+
+    tds: Fix bound check conversion (float -> uint)
+
+    Converting from floating point to unsigned int the bound check
+    was incorrect resulting in invalid conversions if the input
+    value was not in range.
+
+Author: Frediano Ziglio <freddy77@gmail.com>
+Date:   Sat May 31 17:00:18 2025 +0100
+
+    tsql: Avoid possible invalid type formatting a message
+
+    Specifically:
+
+    tsql.c: In function ‘do_query’:
+    tsql.c:292:80: warning: format ‘%ld’ expects argument of type ‘long int’, but argument 4 has type ‘__suseconds64_t’ {aka ‘long long int’} [-Wformat=]
+      292 |                         sprintf(message, "Total time for processing %d rows: %ld msecs\n",
+          |                                                                              ~~^
+          |                                                                                |
+          |                                                                                long int
+          |                                                                              %lld
+      293 |                                 rows, (long) ((stop.tv_sec - start.tv_sec) * 1000) + ((stop.tv_usec - start.tv_usec) / 1000));
+          |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          |                                                                                    |
+          |                                                                                    __suseconds64_t {aka long long int}
+
+    long should be enough for 49 days in case of 32 bit, I hope
+    your query doesn't take so long.
+
+Author: Frediano Ziglio <freddy77@gmail.com>
+Date:   Mon Apr 21 15:58:08 2025 +0100
+
+    ctlib: Remove leak freeing command
+
+    Release cursor while freeing command.
+

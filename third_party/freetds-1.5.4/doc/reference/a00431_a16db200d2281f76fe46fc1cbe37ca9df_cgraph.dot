@@ -1,0 +1,11 @@
+digraph "tds_set_state"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_set_state",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Set state of TDS connection, with logging and checking."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_freeze_abort",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga7274d9c5dc75c58bb7d1f1c29e03a73e",tooltip="Discard all data written after the freeze."];
+}

@@ -1,0 +1,11 @@
+digraph "tds_dstr_dup"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_dstr_dup",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Duplicate a string from another dynamic string."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_dstr_copyn",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga656718f240d7403f986ae887d84a6ca1",tooltip="Set string to a given buffer of characters."];
+}

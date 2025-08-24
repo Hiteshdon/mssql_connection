@@ -1,0 +1,16 @@
+digraph "tds_convert_string"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_convert_string",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Convert a string in an allocated buffer."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_iconv",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00588.html#ga87db49044919f1bc84c0ff5e9ab00304",tooltip="Wrapper around iconv(3)."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="skip_one_input_sequence",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00588.html#ga3380140fc6eb9f2090c430f40e846876",tooltip="Move the input sequence pointer to the next valid position."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_sys_iconv_open",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00588.html#ga900b0bce08c6bfc2e7c988f4b5970516",tooltip="Inputs are FreeTDS canonical names, no other."];
+  Node2 -> Node4 [id="edge4_Node000002_Node000004",color="steelblue1",style="solid",tooltip=" "];
+}
