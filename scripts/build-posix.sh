@@ -22,22 +22,15 @@ ICONV_M4_CANDIDATES=(
   "/opt/homebrew/opt/gettext/share/aclocal/iconv.m4"
   "/usr/local/opt/gettext/share/aclocal/iconv.m4"
 )
+mkdir -p m4
 if command -v brew >/dev/null 2>&1; then
   GETTEXT_PREFIX="$(brew --prefix gettext 2>/dev/null || true)"
-  if [ -n "$GETTEXT_PREFIX" ] && [ -d "$GETTEXT_PREFIX/share/aclocal" ]; then
+  if [ -n "$GETTEXT_PREFIX" ]; then
+    cp -f "$GETTEXT_PREFIX/share/aclocal/iconv.m4" m4/iconv.m4 2>/dev/null || true
     export ACLOCAL_PATH="$GETTEXT_PREFIX/share/aclocal${ACLOCAL_PATH:+:$ACLOCAL_PATH}"
-    ACLOCAL_EXTRA_ARGS="-I $GETTEXT_PREFIX/share/aclocal"
   fi
 fi
-# Proactively vendor iconv.m4 into local m4/ to avoid search path issues on CI
-mkdir -p m4
-for CAND in "${ICONV_M4_CANDIDATES[@]}"; do
-  if [ -f "$CAND" ]; then
-    cp -f "$CAND" m4/iconv.m4
-    break
-  fi
-done
-autoreconf -fi $ACLOCAL_EXTRA_ARGS
+autoreconf -fi
 chmod +x ./configure || true
 [ -f Makefile ] && make distclean || true
 rm -rf build-autotools && mkdir build-autotools && cd build-autotools
