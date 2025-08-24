@@ -160,8 +160,14 @@ jobs:
               if ($line -match 'Image has the following dependencies') { $collect = $true; continue }
               if ($collect) {
                 $t = $line.Trim()
-                if (-not $t) { break }
-                if ($t -match '^[A-Za-z0-9_.-]+\.dll$') { $added = $depNames.Add($t); if ($added) { Write-Host "  -> dependent: $t" } else { Write-Host "  -> dependent (dup): $t" } }
+                if ($t -match '^Summary') { Write-Host "  -> end of dependencies section"; break }
+                if (-not $t) { continue }
+                if ($t -match '^[A-Za-z0-9_.-]+\.dll$') {
+                  $added = $depNames.Add($t)
+                  if ($added) { Write-Host "  -> dependent: $t" } else { Write-Host "  -> dependent (dup): $t" }
+                } else {
+                  Write-Host "  -> not a DLL dependency line (ignored): $t"
+                }
               }
             }
           }
@@ -172,7 +178,8 @@ jobs:
           $skip = @(
             'KERNEL32.dll','USER32.dll','GDI32.dll','ADVAPI32.dll','WS2_32.dll','NTDLL.dll','CRYPT32.dll','BCrypt.dll','secur32.dll','SCHANNEL.dll','RPCRT4.dll','OLE32.dll','COMBASE.dll','SHELL32.dll','SHLWAPI.dll','WLDAP32.dll','IPHLPAPI.DLL','WINHTTP.dll','NORMALIZ.dll','DBGHELP.dll'
           )
-          $toCopy = $depNames | Where-Object { $skip -notcontains $_ }
+          # Also skip API-MS CRT shims and VC runtimes (handled by OS image)
+          $toCopy = $depNames | Where-Object { ($skip -notcontains $_) -and ($_ -notmatch '^api-ms-win-.*\.dll$') -and ($_ -notmatch '^vcruntime\d+\.dll$') -and ($_ -notmatch '^msvcp\d+\.dll$') }
           $skipped = $depNames | Where-Object { $skip -contains $_ }
           if ($skipped) { Write-Host ("Skipped system DLLs: " + ($skipped -join ', ')) }
           Write-Host "Dependencies to locate: $($toCopy -join ', ')"
@@ -183,6 +190,9 @@ jobs:
             $candidates = @()
             $candidates += (Join-Path $bin $name)
             $candidates += (Join-Path "${env:ProgramFiles}\OpenSSL-Win64\bin" $name)
+            $candidates += (Join-Path "${env:ProgramFiles}\OpenSSL\bin" $name)
+            $candidates += (Join-Path "${env:ProgramFiles(x86)}\OpenSSL-Win64\bin" $name)
+            $candidates += (Join-Path "${env:ProgramFiles(x86)}\OpenSSL\bin" $name)
             $candidates += (Join-Path "${env:WINDIR}\System32" $name)
             $candidates += (Join-Path "${env:WINDIR}\SysWOW64" $name)
             $vsRoot = "${env:ProgramFiles}\Microsoft Visual Studio\2022"
