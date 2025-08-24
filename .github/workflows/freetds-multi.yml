@@ -158,16 +158,20 @@ jobs:
               if ($collect) {
                 $t = $line.Trim()
                 if (-not $t) { break }
-                if ($t -match '^[A-Za-z0-9_.-]+\.dll$') { [void]$depNames.Add($t) }
+                if ($t -match '^[A-Za-z0-9_.-]+\.dll$') { $added = $depNames.Add($t); if ($added) { Write-Host "  -> dependent: $t" } else { Write-Host "  -> dependent (dup): $t" } }
               }
             }
           }
+
+          if ($depNames.Count -eq 0) { Write-Host "No dependents found across built DLLs." } else { Write-Host ("Collected dependencies (" + $depNames.Count + "): " + ($depNames -join ', ')) }
 
           # Skip known system DLLs
           $skip = @(
             'KERNEL32.dll','USER32.dll','GDI32.dll','ADVAPI32.dll','WS2_32.dll','NTDLL.dll','CRYPT32.dll','BCrypt.dll','secur32.dll','SCHANNEL.dll','RPCRT4.dll','OLE32.dll','COMBASE.dll','SHELL32.dll','SHLWAPI.dll','WLDAP32.dll','IPHLPAPI.DLL','WINHTTP.dll','NORMALIZ.dll','DBGHELP.dll'
           )
           $toCopy = $depNames | Where-Object { $skip -notcontains $_ }
+          $skipped = $depNames | Where-Object { $skip -contains $_ }
+          if ($skipped) { Write-Host ("Skipped system DLLs: " + ($skipped -join ', ')) }
           Write-Host "Dependencies to locate: $($toCopy -join ', ')"
 
           function Copy-IfFound([string]$name) {
@@ -183,15 +187,19 @@ jobs:
               $found = Get-ChildItem -Path $vsRoot -Recurse -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
               if ($found) { $candidates += $found.FullName }
             }
+            Write-Host ("Candidate search paths for $name: " + ($candidates -join '; '))
             foreach ($src in $candidates) {
+              Write-Host "  checking: $src"
               if ($src -and (Test-Path $src)) {
                 if ([System.IO.Path]::GetFullPath($src) -eq [System.IO.Path]::GetFullPath($dest)) { Write-Host "Already present: $dest"; return }
                 Copy-Item $src $dest -Force
                 Write-Host "Copied $name from $src"
                 return
+              } else {
+                Write-Host "  not found: $src"
               }
             }
-            Write-Host "Warning: could not locate $name"
+            Write-Host ("Warning: could not locate $name (searched: " + ($candidates -join '; ') + ")")
           }
 
           foreach ($name in $toCopy) { Copy-IfFound $name }
