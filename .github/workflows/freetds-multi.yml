@@ -187,7 +187,7 @@ jobs:
               $found = Get-ChildItem -Path $vsRoot -Recurse -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
               if ($found) { $candidates += $found.FullName }
             }
-            Write-Host ("Candidate search paths for $name: " + ($candidates -join '; '))
+            Write-Host ("Candidate search paths for ${name}: " + ($candidates -join '; '))
             foreach ($src in $candidates) {
               Write-Host "  checking: $src"
               if ($src -and (Test-Path $src)) {
