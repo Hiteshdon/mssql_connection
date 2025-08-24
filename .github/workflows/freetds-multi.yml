@@ -51,8 +51,13 @@ jobs:
               if [[ -n "$path" && -f "$path" ]]; then
                 case "$name" in
                   libcrypto*.so*|libssl*.so*|libgnutls*.so*|libiconv*.so*|libkrb5*.so*|libk5crypto*.so*|libcom_err*.so*|libsasl2*.so*)
-                    echo "Copying $path"
-                    cp -f "$path" "$OUT/"
+                    dest="$OUT/$(basename "$path")"
+                    if [ "$path" -ef "$dest" ]; then
+                      echo "Already present: $dest"
+                    else
+                      echo "Copying $path"
+                      cp -f "$path" "$OUT/"
+                    fi
                     ;;
                 esac
               fi
@@ -75,15 +80,25 @@ jobs:
               esac
               base="$(basename "$dep")"
               if [ -f "$dep" ]; then
-                echo "Copying $dep"
-                cp -f "$dep" "$OUT/"
+                dest="$OUT/$base"
+                if [ "$dep" -ef "$dest" ]; then
+                  echo "Already present: $dest"
+                else
+                  echo "Copying $dep"
+                  cp -f "$dep" "$OUT/"
+                fi
                 continue
               fi
               for prefix in /opt/homebrew /usr/local; do
                 found="$(/usr/bin/find "$prefix" -name "$base" -type f -maxdepth 5 2>/dev/null | head -n1)"
                 if [ -n "$found" ]; then
-                  echo "Copying $found"
-                  cp -f "$found" "$OUT/"
+                  dest="$OUT/$base"
+                  if [ "$found" -ef "$dest" ]; then
+                    echo "Already present: $dest"
+                  else
+                    echo "Copying $found"
+                    cp -f "$found" "$OUT/"
+                  fi
                   break
                 fi
               done
@@ -111,27 +126,75 @@ jobs:
             "$env:GITHUB_WORKSPACE\third_party\freetds-1.5.4" `
             "$env:GITHUB_WORKSPACE\out-windows"
 
-      - name: Install OpenSSL 1.1 (Chocolatey)
+      - name: Inspect and copy dependencies (Windows)
         shell: pwsh
         run: |
-          choco install -y openssl.light --version=1.1.1.2100 || choco install -y openssl.light
-
-      - name: Copy OpenSSL DLLs to build output
-        shell: pwsh
-        run: |
+          $ErrorActionPreference = 'Stop'
           $bin = "$env:GITHUB_WORKSPACE\out-windows\bin"
           if (-not (Test-Path $bin)) { New-Item -ItemType Directory -Force -Path $bin | Out-Null }
-          $opensslBin = "${env:ProgramFiles}\OpenSSL-Win64\bin"
-          if (-not (Test-Path (Join-Path $opensslBin 'libcrypto-1_1-x64.dll'))) { throw "libcrypto-1_1-x64.dll not found in $opensslBin" }
-          if (-not (Test-Path (Join-Path $opensslBin 'libssl-1_1-x64.dll'))) { throw "libssl-1_1-x64.dll not found in $opensslBin" }
-          Copy-Item (Join-Path $opensslBin 'libcrypto-1_1-x64.dll') $bin -Force
-          Copy-Item (Join-Path $opensslBin 'libssl-1_1-x64.dll') $bin -Force
-          $vcr = "$env:WINDIR\System32\VCRUNTIME140.dll"
-          if (Test-Path $vcr) {
-            Copy-Item $vcr $bin -Force
-          } else {
-            Write-Host "VCRUNTIME140.dll not found at $vcr; skipping"
+
+          # Locate dumpbin.exe via vswhere or PATH
+          $dumpbin = $null
+          $vsw = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vsw) {
+            $dumpbin = & $vsw -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" | Select-Object -First 1
           }
+          if (-not $dumpbin) {
+            $cmd = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+            if ($cmd) { $dumpbin = $cmd.Source }
+          }
+          if (-not $dumpbin) { Write-Host "dumpbin not found; skipping inspection"; exit 0 }
+          Write-Host "Using dumpbin at $dumpbin"
+
+          # Collect dependency DLL names from all built DLLs
+          $depNames = New-Object System.Collections.Generic.HashSet[string]([System.StringComparer]::OrdinalIgnoreCase)
+          Get-ChildItem -Path $bin -Filter *.dll | ForEach-Object {
+            $dll = $_.FullName
+            Write-Host "Inspecting $dll"
+            $lines = & "$dumpbin" /DEPENDENTS $dll 2>$null
+            $collect = $false
+            foreach ($line in $lines) {
+              if ($line -match 'Image has the following dependencies') { $collect = $true; continue }
+              if ($collect) {
+                $t = $line.Trim()
+                if (-not $t) { break }
+                if ($t -match '^[A-Za-z0-9_.-]+\.dll$') { [void]$depNames.Add($t) }
+              }
+            }
+          }
+
+          # Skip known system DLLs
+          $skip = @(
+            'KERNEL32.dll','USER32.dll','GDI32.dll','ADVAPI32.dll','WS2_32.dll','NTDLL.dll','CRYPT32.dll','BCrypt.dll','secur32.dll','SCHANNEL.dll','RPCRT4.dll','OLE32.dll','COMBASE.dll','SHELL32.dll','SHLWAPI.dll','WLDAP32.dll','IPHLPAPI.DLL','WINHTTP.dll','NORMALIZ.dll','DBGHELP.dll'
+          )
+          $toCopy = $depNames | Where-Object { $skip -notcontains $_ }
+          Write-Host "Dependencies to locate: $($toCopy -join ', ')"
+
+          function Copy-IfFound([string]$name) {
+            $dest = Join-Path $bin $name
+            if (Test-Path $dest) { Write-Host "Already present: $dest"; return }
+            $candidates = @()
+            $candidates += (Join-Path $bin $name)
+            $candidates += (Join-Path "${env:ProgramFiles}\OpenSSL-Win64\bin" $name)
+            $candidates += (Join-Path "${env:WINDIR}\System32" $name)
+            $candidates += (Join-Path "${env:WINDIR}\SysWOW64" $name)
+            $vsRoot = "${env:ProgramFiles}\Microsoft Visual Studio\2022"
+            if (Test-Path $vsRoot) {
+              $found = Get-ChildItem -Path $vsRoot -Recurse -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($found) { $candidates += $found.FullName }
+            }
+            foreach ($src in $candidates) {
+              if ($src -and (Test-Path $src)) {
+                if ([System.IO.Path]::GetFullPath($src) -eq [System.IO.Path]::GetFullPath($dest)) { Write-Host "Already present: $dest"; return }
+                Copy-Item $src $dest -Force
+                Write-Host "Copied $name from $src"
+                return
+              }
+            }
+            Write-Host "Warning: could not locate $name"
+          }
+
+          foreach ($name in $toCopy) { Copy-IfFound $name }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -197,8 +260,13 @@ jobs:
                 found="$(/usr/bin/find "$buildDir" -name "$dep" -type f -maxdepth 3 2>/dev/null | head -n1)"
               fi
               if [ -n "$found" ]; then
-                echo "Copying $found"
-                cp -f "$found" "$OUT/"
+                dest="$OUT/$(basename "$found")"
+                if [ "$found" -ef "$dest" ]; then
+                  echo "Already present: $dest"
+                else
+                  echo "Copying $found"
+                  cp -f "$found" "$OUT/"
+                fi
               else
                 echo "Warning: could not locate $dep to copy"
               fi
