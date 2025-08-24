@@ -120,7 +120,10 @@ AC_ARG_ENABLE(libiconv,
 	[use_libiconv=$enableval], [use_libiconv=yes])
 
 if test "$use_libiconv" = "yes" ; then
-	AM_ICONV
+    m4_ifdef([AM_ICONV],
+        [AM_ICONV],
+        [AC_MSG_WARN([AM_ICONV not found, proceeding without libiconv])
+         AC_DEFINE_UNQUOTED(ICONV_CONST, const, [Define as const if the declaration of iconv() needs const.])])
 else
 	AC_MSG_NOTICE(libiconv disabled)
 	AC_DEFINE_UNQUOTED(ICONV_CONST, const, [Define as const if the declaration of iconv() needs const.])

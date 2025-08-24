@@ -60,7 +60,8 @@ build_one() {
       --host="$HOST" \
       --prefix="$PREFIX" \
       --disable-shared \
-      --enable-static
+      --enable-static \
+      --disable-libiconv
 
   make -j"$(sysctl -n hw.ncpu)"
   make install
