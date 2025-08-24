@@ -40,10 +40,8 @@ build_one() {
   # Select the first arch for configure (we'll fatten later if needed)
   CFG_ARCH="$(echo "$ARCHS" | awk '{print $1}')"
 
-  # Ensure autotools configure exists and is executable
-  if [ ! -f ../configure ]; then
-    (cd .. && autoreconf -fi)
-  fi
+  # Ensure autotools files are (re)generated to avoid versioned aclocal invocations on CI
+  (cd .. && autoreconf -fi) || true
   chmod +x ../configure || true
 
   env \

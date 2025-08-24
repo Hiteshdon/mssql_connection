@@ -456,10 +456,15 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/iconv/lib/iconv.lib")
 endif()
 
 if(WIN32)
-	set(lib_NETWORK ws2_32 crypt32)
+    set(lib_NETWORK ws2_32 crypt32)
 else(WIN32)
-	# TODO check libraries
-	set(lib_NETWORK gssapi_krb5)
+    # TODO check libraries
+    if(ANDROID)
+        # Android NDK does not provide gssapi/kerberos
+        set(lib_NETWORK "")
+    else()
+        set(lib_NETWORK gssapi_krb5)
+    endif()
 endif(WIN32)
 
 if(OPENSSL_FOUND)

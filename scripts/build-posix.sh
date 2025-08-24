@@ -15,8 +15,8 @@ mkdir -p "$OUT_DIR"
 pushd "$SRC_DIR" >/dev/null
 
 # Prefer autotools for POSIX (FreeTDS ships configure)
-# Ensure clean
-[ ! -f ./configure ] && autoreconf -fi || true
+# Ensure clean and force-regenerate autotools files so make won't invoke versioned aclocal
+autoreconf -fi || true
 chmod +x ./configure || true
 [ -f Makefile ] && make distclean || true
 rm -rf build-autotools && mkdir build-autotools && cd build-autotools
