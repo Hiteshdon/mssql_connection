@@ -27,9 +27,18 @@ for ABI in $ABIS; do
     -DBUILD_SHARED_LIBS=ON \
     -DCMAKE_BUILD_TYPE=Release
 
-  cmake --build . --config Release -j
+  # Work around Android lacking system iconv: force-disable HAVE_ICONV in generated config.h
+  # so FreeTDS uses its internal replacements instead of system iconv.
+  CONFIG_H="$BUILD_DIR/include/config.h"
+  if [ -f "$CONFIG_H" ]; then
+    # Replace a strict match to avoid unintended changes
+    sed -i.bak -e 's/^#define HAVE_ICONV 1$/#undef HAVE_ICONV/' "$CONFIG_H" || true
+  fi
 
-  # Find produced libs (libsybdb* usually)
+  # Build only dblib and ct targets to avoid compiling ODBC (which needs unixODBC/iODBC headers)
+  cmake --build . --config Release --target sybdb db-lib ct -j
+
+  # Find produced libs (libsybdb and its dependencies)
   mkdir -p "$OUT_DIR/$ABI"
   find . -name "lib*.so" -maxdepth 3 -print -exec cp {} "$OUT_DIR/$ABI/" \;
 

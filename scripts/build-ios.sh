@@ -40,12 +40,18 @@ build_one() {
   # Select the first arch for configure (we'll fatten later if needed)
   CFG_ARCH="$(echo "$ARCHS" | awk '{print $1}')"
 
+  # Ensure autotools configure exists and is executable
+  if [ ! -f ../configure ]; then
+    (cd .. && autoreconf -fi)
+  fi
+  chmod +x ../configure || true
+
   env \
     CC="$(xcrun -f clang)" \
     CXX="$(xcrun -f clang++)" \
     CFLAGS="$CFLAGS -arch $CFG_ARCH" \
     LDFLAGS="$LDFLAGS -arch $CFG_ARCH" \
-    ./configure \
+    ../configure \
       --host="$HOST" \
       --prefix="$PREFIX" \
       --disable-shared \
@@ -77,14 +83,24 @@ for LIB in "$SIM_PREFIX_A/lib/"*.a; do
   lipo -create -output "$SIM_LIB_DIR/$NAME" "$LIB" "$SIM_PREFIX_X/lib/$NAME"
 done
 
-# Create XCFramework (pick libsybdb.a as the primary; FreeTDS also installs others)
-IOS_DEVICE_LIB="$(ls "$DEVICE_PREFIX/lib/libsybdb.a")"
-IOS_SIM_LIB="$(ls "$SIM_LIB_DIR/libsybdb.a")"
+# Create DB-Lib XCFramework (libsybdb.a)
+IOS_DEVICE_DBLIB="$(ls "$DEVICE_PREFIX/lib/libsybdb.a")"
+IOS_SIM_DBLIB="$(ls "$SIM_LIB_DIR/libsybdb.a")"
 
-rm -rf "$OUT_DIR/FreeTDS.xcframework"
+rm -rf "$OUT_DIR/FreeTDS-DB.xcframework"
 xcodebuild -create-xcframework \
-  -library "$IOS_DEVICE_LIB" -headers "$DEVICE_PREFIX/include" \
-  -library "$IOS_SIM_LIB"    -headers "$SIM_PREFIX_A/include" \
-  -output "$OUT_DIR/FreeTDS.xcframework"
+  -library "$IOS_DEVICE_DBLIB" -headers "$DEVICE_PREFIX/include" \
+  -library "$IOS_SIM_DBLIB"    -headers "$SIM_PREFIX_A/include" \
+  -output "$OUT_DIR/FreeTDS-DB.xcframework"
 
-echo "Built iOS XCFramework at: $OUT_DIR/FreeTDS.xcframework"
+# Create CT-Lib XCFramework (libct.a)
+IOS_DEVICE_CTLIB="$(ls "$DEVICE_PREFIX/lib/libct.a")"
+IOS_SIM_CTLIB="$(ls "$SIM_LIB_DIR/libct.a")"
+
+rm -rf "$OUT_DIR/FreeTDS-CT.xcframework"
+xcodebuild -create-xcframework \
+  -library "$IOS_DEVICE_CTLIB" -headers "$DEVICE_PREFIX/include" \
+  -library "$IOS_SIM_CTLIB"    -headers "$SIM_PREFIX_A/include" \
+  -output "$OUT_DIR/FreeTDS-CT.xcframework"
+
+echo "Built iOS XCFrameworks at: $OUT_DIR/FreeTDS-DB.xcframework and $OUT_DIR/FreeTDS-CT.xcframework"
