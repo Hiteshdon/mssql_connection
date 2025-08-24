@@ -23,18 +23,18 @@ ICONV_M4_CANDIDATES=(
   "/usr/local/opt/gettext/share/aclocal/iconv.m4"
 )
 # Prepare autotools only if configure.ac is present
-if [ -f configure.ac ]; then
-  mkdir -p m4
-  if command -v brew >/dev/null 2>&1; then
+if [ -f ../configure.ac ]; then
+mkdir -p ../m4
+if command -v brew >/dev/null 2>&1; then
     GETTEXT_PREFIX="$(brew --prefix gettext 2>/dev/null || true)"
     if [ -n "$GETTEXT_PREFIX" ]; then
-      cp -f "$GETTEXT_PREFIX/share/aclocal/iconv.m4" m4/iconv.m4 2>/dev/null || true
-      export ACLOCAL_PATH="$GETTEXT_PREFIX/share/aclocal${ACLOCAL_PATH:+:$ACLOCAL_PATH}"
+    cp -f "$GETTEXT_PREFIX/share/aclocal/iconv.m4" ../m4/iconv.m4 2>/dev/null || true
+    export ACLOCAL_PATH="$GETTEXT_PREFIX/share/aclocal${ACLOCAL_PATH:+:$ACLOCAL_PATH}"
     fi
-  fi
-  autoreconf -fi
 fi
-chmod +x ./configure || true
+(cd .. && autoreconf -fi)
+fi
+chmod +x ../configure || true
 [ -f Makefile ] && make distclean || true
 rm -rf build-autotools && mkdir build-autotools && cd build-autotools
 
