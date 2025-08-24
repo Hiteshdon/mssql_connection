@@ -21,6 +21,11 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 AC_CONFIG_HEADERS(include/config.h)
 AC_CONFIG_MACRO_DIR([m4])
 
+# Allow AM_ICONV token and define a no-op fallback if gettext's macro is absent.
+# This prevents autoconf from failing on environments where iconv.m4 isn't installed.
+m4_pattern_allow([AM_ICONV])
+m4_ifndef([AM_ICONV], [m4_define([AM_ICONV], [])])
+
 dnl configuration directory will be /usr/local/etc
 AC_PREFIX_DEFAULT(/usr/local)
 
