@@ -35,6 +35,61 @@ jobs:
       - name: Build
         run: |
           bash scripts/build-posix.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-${{ runner.os }}"
+      - name: Inspect and copy dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/out-${{ runner.os }}/lib"
+          echo "Inspecting Linux deps in $OUT"
+          shopt -s nullglob
+          for f in "$OUT"/*.so; do
+            echo "== $f"
+            readelf -d "$f" | grep NEEDED || true
+            while read -r line; do
+              path="$(echo "$line" | awk '{print $3}')"
+              name="$(basename "$path" 2>/dev/null || true)"
+              if [[ -n "$path" && -f "$path" ]]; then
+                case "$name" in
+                  libcrypto*.so*|libssl*.so*|libgnutls*.so*|libiconv*.so*|libkrb5*.so*|libk5crypto*.so*|libcom_err*.so*|libsasl2*.so*)
+                    echo "Copying $path"
+                    cp -f "$path" "$OUT/"
+                    ;;
+                esac
+              fi
+            done < <(ldd "$f" | grep '=> /' || true)
+          done
+
+      - name: Inspect and copy dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/out-${{ runner.os }}/lib"
+          echo "Inspecting macOS deps in $OUT"
+          shopt -s nullglob
+          for f in "$OUT"/*.dylib; do
+            echo "== $f"
+            otool -L "$f" || true
+            otool -L "$f" | awk 'NR>1 {print $1}' | while read -r dep; do
+              case "$dep" in
+                /usr/lib/*|/System/*) continue;;
+              esac
+              base="$(basename "$dep")"
+              if [ -f "$dep" ]; then
+                echo "Copying $dep"
+                cp -f "$dep" "$OUT/"
+                continue
+              fi
+              for prefix in /opt/homebrew /usr/local; do
+                found="$(/usr/bin/find "$prefix" -name "$base" -type f -maxdepth 5 2>/dev/null | head -n1)"
+                if [ -n "$found" ]; then
+                  echo "Copying $found"
+                  cp -f "$found" "$OUT/"
+                  break
+                fi
+              done
+            done
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: freetds-${{ runner.os }}
@@ -55,6 +110,28 @@ jobs:
           pwsh scripts/build-windows.ps1 `
             "$env:GITHUB_WORKSPACE\third_party\freetds-1.5.4" `
             "$env:GITHUB_WORKSPACE\out-windows"
+
+      - name: Install OpenSSL 1.1 (Chocolatey)
+        shell: pwsh
+        run: |
+          choco install -y openssl.light --version=1.1.1.2100 || choco install -y openssl.light
+
+      - name: Copy OpenSSL DLLs to build output
+        shell: pwsh
+        run: |
+          $bin = "$env:GITHUB_WORKSPACE\out-windows\bin"
+          if (-not (Test-Path $bin)) { New-Item -ItemType Directory -Force -Path $bin | Out-Null }
+          $opensslBin = "${env:ProgramFiles}\OpenSSL-Win64\bin"
+          if (-not (Test-Path (Join-Path $opensslBin 'libcrypto-1_1-x64.dll'))) { throw "libcrypto-1_1-x64.dll not found in $opensslBin" }
+          if (-not (Test-Path (Join-Path $opensslBin 'libssl-1_1-x64.dll'))) { throw "libssl-1_1-x64.dll not found in $opensslBin" }
+          Copy-Item (Join-Path $opensslBin 'libcrypto-1_1-x64.dll') $bin -Force
+          Copy-Item (Join-Path $opensslBin 'libssl-1_1-x64.dll') $bin -Force
+          $vcr = "$env:WINDIR\System32\VCRUNTIME140.dll"
+          if (Test-Path $vcr) {
+            Copy-Item $vcr $bin -Force
+          } else {
+            Write-Host "VCRUNTIME140.dll not found at $vcr; skipping"
+          }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -91,6 +168,43 @@ jobs:
         run: |
           bash scripts/build-android.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-android" "${{ matrix.abi }}"
 
+      - name: Inspect and copy dependencies (Android ${{ matrix.abi }})
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/out-android/${{ matrix.abi }}"
+          echo "Inspecting Android deps in $OUT"
+          TOOL="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readobj"
+          shopt -s nullglob
+          for f in "$OUT"/*.so; do
+            echo "== $f"
+            if [ -x "$TOOL" ]; then
+              "$TOOL" --needed-libs "$f" || true
+              deps=$("$TOOL" --needed-libs "$f" 2>/dev/null | tr -d '\r' | sed 's/[][,:]/ /g')
+            else
+              readelf -d "$f" | grep NEEDED || true
+              deps=$(readelf -d "$f" 2>/dev/null | awk -F'[][]' '/NEEDED/{print $2}')
+            fi
+            for dep in $deps; do
+              case "$dep" in
+                libc.so|libm.so|libdl.so|liblog.so|libstdc++.so|libgcc*.so) continue;;
+              esac
+              found="$(/usr/bin/find "$OUT" -name "$dep" -type f -maxdepth 1 2>/dev/null | head -n1)"
+              if [ -z "$found" ]; then
+                found="$(/usr/bin/find "$GITHUB_WORKSPACE/out-android" -name "$dep" -type f -maxdepth 2 2>/dev/null | head -n1)"
+              fi
+              if [ -z "$found" ]; then
+                buildDir="$GITHUB_WORKSPACE/out-android/build-${{ matrix.abi }}"
+                found="$(/usr/bin/find "$buildDir" -name "$dep" -type f -maxdepth 3 2>/dev/null | head -n1)"
+              fi
+              if [ -n "$found" ]; then
+                echo "Copying $found"
+                cp -f "$found" "$OUT/"
+              else
+                echo "Warning: could not locate $dep to copy"
+              fi
+            done
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: freetds-android-${{ matrix.abi }}
@@ -111,6 +225,10 @@ jobs:
       - name: Build iOS XCFrameworks (DB and CT)
         run: |
           bash scripts/build-ios.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-ios"
+
+      - name: Inspect dependencies (iOS)
+        run: |
+          echo "iOS builds static libraries in XCFrameworks; no runtime dylibs to inspect or copy."
 
       - uses: actions/upload-artifact@v4
         with:
