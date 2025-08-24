@@ -151,7 +151,10 @@ jobs:
           Get-ChildItem -Path $bin -Filter *.dll | ForEach-Object {
             $dll = $_.FullName
             Write-Host "Inspecting $dll"
+            Write-Host "dumpbin /DEPENDENTS $dll"
             $lines = & "$dumpbin" /DEPENDENTS $dll 2>$null
+            Write-Host "dumpbin output:"
+            foreach ($line in $lines) { Write-Host "  $line" }
             $collect = $false
             foreach ($line in $lines) {
               if ($line -match 'Image has the following dependencies') { $collect = $true; continue }
