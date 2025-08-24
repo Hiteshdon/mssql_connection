@@ -16,7 +16,13 @@ pushd "$SRC_DIR" >/dev/null
 
 # Prefer autotools for POSIX (FreeTDS ships configure)
 # Ensure clean and force-regenerate autotools files so make won't invoke versioned aclocal
-autoreconf -fi || true
+if command -v brew >/dev/null 2>&1; then
+  GETTEXT_PREFIX="$(brew --prefix gettext 2>/dev/null || true)"
+  if [ -n "$GETTEXT_PREFIX" ] && [ -d "$GETTEXT_PREFIX/share/aclocal" ]; then
+    export ACLOCAL_PATH="$GETTEXT_PREFIX/share/aclocal${ACLOCAL_PATH:+:$ACLOCAL_PATH}"
+  fi
+fi
+autoreconf -fi
 chmod +x ./configure || true
 [ -f Makefile ] && make distclean || true
 rm -rf build-autotools && mkdir build-autotools && cd build-autotools

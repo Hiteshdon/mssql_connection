@@ -41,6 +41,13 @@ build_one() {
   CFG_ARCH="$(echo "$ARCHS" | awk '{print $1}')"
 
   # Ensure autotools files are (re)generated to avoid versioned aclocal invocations on CI
+  # Make gettext m4 macros discoverable when installed via Homebrew
+  if command -v brew >/dev/null 2>&1; then
+    GETTEXT_PREFIX="$(brew --prefix gettext 2>/dev/null || true)"
+    if [ -n "$GETTEXT_PREFIX" ] && [ -d "$GETTEXT_PREFIX/share/aclocal" ]; then
+      export ACLOCAL_PATH="$GETTEXT_PREFIX/share/aclocal${ACLOCAL_PATH:+:$ACLOCAL_PATH}"
+    fi
+  fi
   (cd .. && autoreconf -fi) || true
   chmod +x ../configure || true
 
