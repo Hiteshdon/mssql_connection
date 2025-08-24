@@ -124,15 +124,9 @@ AC_ARG_ENABLE(libiconv,
 	AS_HELP_STRING([--disable-libiconv], [do not attempt to include libiconv]),
 	[use_libiconv=$enableval], [use_libiconv=yes])
 
-if test "$use_libiconv" = "yes" ; then
-    m4_ifdef([AM_ICONV],
-        [AM_ICONV],
-        [AC_MSG_WARN([AM_ICONV not found, proceeding without libiconv])
-         AC_DEFINE_UNQUOTED(ICONV_CONST, const, [Define as const if the declaration of iconv() needs const.])])
-else
-	AC_MSG_NOTICE(libiconv disabled)
-	AC_DEFINE_UNQUOTED(ICONV_CONST, const, [Define as const if the declaration of iconv() needs const.])
-fi
+dnl Bypass AM_ICONV entirely to avoid macro availability/expansion issues on CI
+AC_MSG_NOTICE([libiconv checks bypassed])
+AC_DEFINE_UNQUOTED(ICONV_CONST, const, [Define as const if the declaration of iconv() needs const.])
 
 
 # See if we have doxygen installed
