@@ -8,6 +8,7 @@ Future<int> main() async {
   const password = 'eSeal@123';
 
   final client = MssqlClient(server: server, username: username, password: password);
+  print("Connecting...");
   final ok = await client.connect();
   if (!ok) {
     print('CONNECT FAILED');
@@ -49,16 +50,10 @@ Future<int> main() async {
         'flag': true,
         'data': Uint8List.fromList([1, 2, 3, 4])
       },
-      types: {
-        'id': SYBINT4,
-        'name': SYBNVARCHAR,
-        'created': SYBDATETIME,
-        'flag': SYBBIT,
-        'data': SYBVARBINARY,
-      },
     );
     print(insertRes);
-
+    // print('Waiting for 5 minutes(Manual Inspection)...');
+    // await Future.delayed(const Duration(minutes: 5));
     // Query back
     print('Selecting rows...');
     final rowsJson = await client.query('SELECT id, name, created, flag, DATALENGTH(data) AS data_len FROM dbo.Items');
