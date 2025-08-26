@@ -9,6 +9,8 @@
 // - For production, validate against your exact FreeTDS headers used to build the libs.
 // - All pointers are treated as opaque; memory ownership must follow DB-Lib semantics.
 
+// ignore_for_file: library_private_types_in_public_api, non_constant_identifier_names, deprecated_member_use, camel_case_types, constant_identifier_names
+
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
@@ -34,9 +36,13 @@ const int SUCCEED = 1;
 const int FAIL = 0;
 const int NO_MORE_RESULTS = 2; // dbresults may return NO_MORE_RESULTS
 
-// Row fetch status
-const int REG_ROW = 4040; // placeholder; use actual DB-Lib row codes if exposing
-
+// Row fetch status (dbnextrow) as per FreeTDS sybdb.h
+// REG_ROW and MORE_ROWS are -1 (a valid row is available)
+// NO_MORE_ROWS is -2 (end of rows), BUF_FULL is -3 (driver buffer full; call again)
+const int REG_ROW = -1;
+const int MORE_ROWS = -1;
+const int NO_MORE_ROWS = -2; // dbnextrow: no more rows
+const int BUF_FULL = -3; 
 // DB-Lib data types (expanded to align with FreeTDS sybdb.h)
 const int SYBCHAR = 47;         // char
 const int SYBVARCHAR = 39;      // varchar

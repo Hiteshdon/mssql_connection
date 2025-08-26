@@ -2068,6 +2068,47 @@ tds_convert(const TDSCONTEXT *tds_ctx, int srctype, const void *src, TDS_UINT sr
 	case SYBNTEXT:
 	case SYBMSTABLE:
 	default:
+		/* Provide basic Unicode -> CHAR conversion path for N types without requiring TDSSOCKET */
+		if (srctype == SYBNVARCHAR || srctype == SYBNTEXT)
+		{
+			const unsigned char *us = (const unsigned char *)src;
+			/* srclen is in bytes; NVARCHAR data is UTF-16LE/UCS-2LE. */
+			TDS_UINT in_chars = srclen / 2u;
+			TDS_UINT i;
+			switch (desttype)
+			{
+			case TDS_CONVERT_CHAR:
+			{
+				TDS_UINT out = 0;
+				for (i = 0; i < in_chars && out < (TDS_UINT)cr->cc.len; ++i)
+				{
+					unsigned char lo = us[i * 2u];
+					unsigned char hi = us[i * 2u + 1u];
+					/* best-effort down-conversion: ASCII if possible, else '?' */
+					cr->cc.c[out++] = (hi == 0) ? (char)lo : '?';
+				}
+				return (TDS_INT)in_chars;
+			}
+			case SYBCHAR:
+			case SYBVARCHAR:
+			case SYBTEXT:
+			{
+				char *buf = tds_new(char, in_chars + 1u);
+				test_alloc(buf);
+				for (i = 0; i < in_chars; ++i)
+				{
+					unsigned char lo = us[i * 2u];
+					unsigned char hi = us[i * 2u + 1u];
+					buf[i] = (hi == 0) ? (char)lo : '?';
+				}
+				buf[in_chars] = '\0';
+				cr->c = buf;
+				return (TDS_INT)in_chars;
+			}
+			default:
+				break;
+			}
+		}
 		return TDS_CONVERT_NOAVAIL;
 		break;
 	}

@@ -253,6 +253,10 @@ tds_set_param_type(TDSCONNECTION * conn, TDSCOLUMN * curcol, TDS_SERVER_TYPE typ
 		case SYBCHAR:
 			type = XSYBCHAR;
 			break;
+		case SYBNVARCHAR:
+			/* Promote NVARCHAR to extended type for TDS 7+ */
+			type = XSYBNVARCHAR;
+			break;
 		case SYBVARBINARY:
 			type = XSYBVARBINARY;
 			break;

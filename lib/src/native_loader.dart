@@ -38,11 +38,11 @@ class NativeLoader {
         final scriptDir = File.fromUri(Platform.script).parent;
         final root = scriptDir.parent; // repo root when running from tool/
         final rootPath = root.path;
-        candidateDirs.add(rootPath + '/linux/Libraries');
+        candidateDirs.add('$rootPath/linux/Libraries');
       } catch (_) {}
       try {
         final cwd = Directory.current.path;
-        candidateDirs.add(cwd + '/linux/Libraries');
+        candidateDirs.add('$cwd/linux/Libraries');
       } catch (_) {}
       NativeLogger.i('Linux[DB]: candidateDirs=${candidateDirs.join('; ')}');
       for (final dir in candidateDirs) {
@@ -97,14 +97,14 @@ class NativeLoader {
         final root = scriptDir.parent; // repo root when running from tool/
         final rootPath = root.path;
         candidateDirs.addAll([
-          rootPath + '\\windows\\Libraries\\bin',
+          '$rootPath\\windows\\Libraries\\bin',
         ]);
       } catch (_) {}
       // Also add fallbacks relative to the current working directory
       try {
         final cwd = Directory.current.path;
         candidateDirs.addAll([
-          cwd + '\\windows\\Libraries\\bin',
+          '$cwd\\windows\\Libraries\\bin',
           cwd,
         ]);
       } catch (_) {}
@@ -115,8 +115,8 @@ class NativeLoader {
         try {
           NativeLogger.i('Windows[DB]: trying dir=$dir');
           _setDllDirectory(dir); NativeLogger.i('Windows[DB]: SetDllDirectory($dir)');
-          final ct = dir + '\\ct.dll';
-          final db = dir + '\\sybdb.dll';
+          final ct = '$dir\\ct.dll';
+          final db = '$dir\\sybdb.dll';
           // Preload using LoadLibraryExW so dependencies resolve from same dir
           _preloadWithAlteredSearchPath(ct); NativeLogger.i('Windows[DB]: preload $ct');
           _preloadWithAlteredSearchPath(db); NativeLogger.i('Windows[DB]: preload $db');
@@ -128,7 +128,7 @@ class NativeLoader {
           NativeLogger.w('Windows[DB]: failed -> $e');
           lastErr = e; /* try next dir */ }
       }
-      throw UnsupportedError('Could not load FreeTDS DB-Lib for this platform. Tried: ' + tried.join('; ') + (lastErr != null ? ' | Last error: ' + lastErr.toString() : ''));
+      throw UnsupportedError('Could not load FreeTDS DB-Lib for this platform. Tried: ${tried.join('; ')}${lastErr != null ? ' | Last error: ' + lastErr.toString() : ''}');
     }
     throw UnsupportedError('Could not load FreeTDS DB-Lib for this platform.');
   }
@@ -164,11 +164,11 @@ class NativeLoader {
         final scriptDir = File.fromUri(Platform.script).parent;
         final root = scriptDir.parent; // repo root when running from tool/
         final rootPath = root.path;
-        candidateDirs.add(rootPath + '/linux/Libraries');
+        candidateDirs.add('$rootPath/linux/Libraries');
       } catch (_) {}
       try {
         final cwd = Directory.current.path;
-        candidateDirs.add(cwd + '/linux/Libraries');
+        candidateDirs.add('$cwd/linux/Libraries');
       } catch (_) {}
       NativeLogger.i('Linux[CT]: candidateDirs=${candidateDirs.join('; ')}');
       for (final dir in candidateDirs) {
@@ -217,7 +217,7 @@ class NativeLoader {
         final root = scriptDir.parent;
         final rootPath = root.path;
         final candidateRootDirs = [
-          rootPath + '\\windows\\Libraries',
+          '$rootPath\\windows\\Libraries',
         ];
         NativeLogger.i('Windows[CT]: candidateDirs(root)=${candidateRootDirs.join('; ')}');
         for (final dir in candidateRootDirs) {
@@ -233,7 +233,7 @@ class NativeLoader {
       try {
         final cwd = Directory.current.path;
         final candidateCwdDirs = [
-          cwd + '\\windows\\Libraries',
+          '$cwd\\windows\\Libraries',
           cwd,
         ];
         NativeLogger.i('Windows[CT]: candidateDirs(cwd)=${candidateCwdDirs.join('; ')}');
@@ -255,7 +255,7 @@ class NativeLoader {
           return DynamicLibrary.open(p);
         }
       } catch (_) {}
-      throw UnsupportedError('Could not load FreeTDS CT-Lib for this platform. Tried: ' + tried.join('; ') + (lastErr != null ? ' | Last error: ' + lastErr.toString() : ''));
+      throw UnsupportedError('Could not load FreeTDS CT-Lib for this platform. Tried: ${tried.join('; ')}${lastErr != null ? ' | Last error: ' + lastErr.toString() : ''}');
     }
     throw UnsupportedError('Could not load FreeTDS CT-Lib for this platform.');
   }

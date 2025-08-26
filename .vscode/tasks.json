@@ -1,0 +1,51 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Dart basic test run",
+			"type": "shell",
+			"command": "dart",
+			"args": [
+				"run",
+				".\\example\\mssql_connection_example.dart",
+				// "expanded"
+			],
+			"problemMatcher": [
+				"$dart-test"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run Dart tests",
+			"type": "shell",
+			"command": "dart",
+			"args": [
+				"test",
+				// "-r",
+				// "expanded"
+				".\\test\\mssql_client_modes_test.dart",
+				"expanded"
+			],
+			"problemMatcher": [
+				"$dart-test"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run Dart tests (retry)",
+			"type": "shell",
+			"command": "dart",
+			"args": [
+				"test",
+				// "-r",
+				// "expanded"
+				".\\test\\mssql_client_modes_test.dart",
+				"expanded"
+			],
+			"problemMatcher": [
+				"$dart-test"
+			],
+			"group": "build"
+		}
+	]
+}
