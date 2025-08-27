@@ -283,24 +283,6 @@ class NativeLoader {
     throw UnsupportedError('Could not load FreeTDS CT-Lib for this platform.');
   }
 
-  // static void _setDllDirectoryFor(String dllPath) {
-  //   try {
-  //     final idx = dllPath.lastIndexOf('\\');
-  //     if (idx <= 0) return;
-  //     final dir = dllPath.substring(0, idx);
-  //     final k32 = DynamicLibrary.open('kernel32.dll');
-  //     final setDllDir = k32
-  //         .lookupFunction<
-  //           Int32 Function(Pointer<Utf16>),
-  //           int Function(Pointer<Utf16>)
-  //         >('SetDllDirectoryW');
-  //     final p = dir.toNativeUtf16();
-  //     setDllDir(p);
-  //     malloc.free(p);
-  //   } catch (_) {
-  //     // best effort only
-  //   }
-  // }
 
   static void _setDllDirectory(String dir) {
     try {
