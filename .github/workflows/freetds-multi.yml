@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'scripts/**'
+      - 'lib/**'
       - 'third_party/freetds-1.5.4/**'
       - '.github/workflows/freetds-multi.yml'
 
