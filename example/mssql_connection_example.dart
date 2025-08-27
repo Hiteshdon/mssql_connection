@@ -4,26 +4,39 @@ import 'dart:typed_data';
 import 'package:mssql_connection/mssql_connection.dart';
 
 Future<void> main() async {
+  // Enable verbose logs to diagnose native loading/execution
   // Configure from environment for easy local testing.
-  // Set MSSQL_SERVER, MSSQL_USER, MSSQL_PASS or rely on test defaults.
+  // Set MSSQL_SERVER (e.g. 192.168.1.10:1433), MSSQL_USER, MSSQL_PASS, MSSQL_DB.
   final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.10:1433';
   final username = Platform.environment['MSSQL_USER'] ?? 'sa';
   final password = Platform.environment['MSSQL_PASS'] ?? 'eSeal@123';
+  final database = Platform.environment['MSSQL_DB'] ?? 'master';
 
-  final client = MssqlClient(
-    server: server,
-    username: username,
-    password: password,
-  );
+  final parts = server.split(':');
+  final ip = parts.isNotEmpty ? parts.first : server;
+  final port = parts.length > 1 ? parts[1] : '1433';
 
-  final ok = await client.connect();
+  final conn = MssqlConnection.getInstance();
+  bool ok;
+  try {
+    ok = await conn.connect(
+      ip: ip,
+      port: port,
+      databaseName: database,
+      username: username,
+      password: password,
+    );
+  } catch (e, st) {
+    print('connect threw: $e\n$st');
+    return;
+  }
   if (!ok) {
     print('Connection failed to $server as $username');
     return;
   }
 
   // Simple query returning a variety of types
-  final q1 = await client.query("""
+  final q1 = await conn.getData("""
     SELECT
       CAST(1 AS int)          AS i32,
       CAST(1 AS bigint)       AS i64,
@@ -42,11 +55,21 @@ Future<void> main() async {
     '@when': DateTime.now().toUtc(), // DateTime -> datetime
     '@blob': Uint8List.fromList([1, 2, 3, 4]), // bytes -> varbinary(max)
   };
-  final q2 = await client.queryParams(
+  final q2 = await conn.getDataWithParams(
     'SELECT @id AS id, CONVERT(datetime2, @when) AS when_dt2, @blob AS blob',
     params,
   );
   print(q2);
 
-  await client.close();
+  // Basic DDL/DML using write helpers
+  await conn.writeData(
+    'CREATE TABLE #tmp (id INT PRIMARY KEY, name NVARCHAR(50))',
+  );
+  await conn.writeDataWithParams(
+    'INSERT INTO #tmp (id, name) VALUES (@id, @name)',
+    {'@id': 1, '@name': 'Alice'},
+  );
+  print(await conn.getData('SELECT * FROM #tmp'));
+
+  await conn.disconnect();
 }

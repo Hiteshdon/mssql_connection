@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:mssql_connection/mssql_connection.dart';
 
 String _uniqueDbName([String prefix = 'Test']) {
@@ -10,13 +11,29 @@ String _uniqueDbName([String prefix = 'Test']) {
   return '${prefix}_${ts}_$rnd';
 }
 
-Future<void> runWithClientAndTempDb(Future<void> Function(MssqlClient client, String dbName) body) async {
+Future<void> runWithClientAndTempDb(
+  Future<void> Function(MssqlConnection client, String dbName) body,
+) async {
   final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.10:1433';
   final username = Platform.environment['MSSQL_USER'] ?? 'sa';
-  final password = Platform.environment['MSSQL_PASS'] ?? 'eSeal@123';
+  final password =
+      Platform.environment['MSSQL_PASS'] ??
+      Platform.environment['MSSQL_PASSWORD'] ??
+      'eSeal@123';
 
-  final client = MssqlClient(server: server, username: username, password: password);
-  final ok = await client.connect();
+  // Parse server into ip and port (default 1433)
+  final parts = server.split(':');
+  final ip = parts.isNotEmpty ? parts.first : '127.0.0.1';
+  final port = parts.length > 1 ? parts[1] : '1433';
+
+  final client = MssqlConnection.getInstance();
+  final ok = await client.connect(
+    ip: ip,
+    port: port,
+    databaseName: 'master',
+    username: username,
+    password: password,
+  );
   if (!ok) {
     throw StateError('Failed to connect to $server as $username');
   }
@@ -29,16 +46,30 @@ Future<void> runWithClientAndTempDb(Future<void> Function(MssqlClient client, St
   } finally {
     try {
       await client.execute('USE master');
-      await client.execute('ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE');
+      await client.execute(
+        'ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE',
+      );
       await client.execute('DROP DATABASE [$dbName]');
     } catch (_) {}
-    await client.close();
+    await client.disconnect();
   }
 }
 
-Future<Map<String, dynamic>> parseJson(String jsonStr) async => json.decode(jsonStr) as Map<String, dynamic>;
-List<dynamic> parseRows(String jsonStr) => (json.decode(jsonStr) as Map<String, dynamic>)['rows'] as List<dynamic>;
-int affectedCount(String jsonStr) => (json.decode(jsonStr) as Map<String, dynamic>)['affected'] as int? ?? 0;
+// Compat layer so tests can call client.execute/query/executeParams with
+// a MssqlConnection instance.
+extension _TestClientCompat on MssqlConnection {
+  Future<String> execute(String sql) => writeData(sql);
+  Future<String> query(String sql) => getData(sql);
+  Future<String> executeParams(String sql, Map<String, dynamic> params) =>
+      writeDataWithParams(sql, params);
+}
+
+Future<Map<String, dynamic>> parseJson(String jsonStr) async =>
+    json.decode(jsonStr) as Map<String, dynamic>;
+List<dynamic> parseRows(String jsonStr) =>
+    (json.decode(jsonStr) as Map<String, dynamic>)['rows'] as List<dynamic>;
+int affectedCount(String jsonStr) =>
+    (json.decode(jsonStr) as Map<String, dynamic>)['affected'] as int? ?? 0;
 
 /// A reusable temp-database harness for running many tests within a single DB.
 ///
@@ -46,16 +77,28 @@ int affectedCount(String jsonStr) => (json.decode(jsonStr) as Map<String, dynami
 /// when scaling up to dozens of cases per mode. Use setUpAll/tearDownAll in
 /// your test group to initialize and dispose this harness once per group.
 class TempDbHarness {
-  late final MssqlClient client;
+  late final MssqlConnection client;
   late final String dbName;
 
   Future<void> init() async {
     final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.10:1433';
     final username = Platform.environment['MSSQL_USER'] ?? 'sa';
-    final password = Platform.environment['MSSQL_PASS'] ?? 'eSeal@123';
+    final password =
+        Platform.environment['MSSQL_PASS'] ??
+        Platform.environment['MSSQL_PASSWORD'] ??
+        'eSeal@123';
+    final parts = server.split(':');
+    final ip = parts.isNotEmpty ? parts.first : '127.0.0.1';
+    final port = parts.length > 1 ? parts[1] : '1433';
 
-    client = MssqlClient(server: server, username: username, password: password);
-    final ok = await client.connect();
+    client = MssqlConnection.getInstance();
+    final ok = await client.connect(
+      ip: ip,
+      port: port,
+      databaseName: 'master',
+      username: username,
+      password: password,
+    );
     if (!ok) {
       throw StateError('Failed to connect to $server as $username');
     }
@@ -68,27 +111,72 @@ class TempDbHarness {
   Future<void> dispose() async {
     try {
       await client.execute('USE master');
-      await client.execute('ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE');
+      await client.execute(
+        'ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE',
+      );
       await client.execute('DROP DATABASE [$dbName]');
     } catch (_) {}
-    await client.close();
+    await client.disconnect();
   }
 
   Future<String> execute(String sql) => client.execute(sql);
   Future<String> query(String sql) => client.query(sql);
-  Future<String> executeParams(String sql, Map<String, dynamic> params) => client.executeParams(sql, params);
+  Future<String> executeParams(String sql, Map<String, dynamic> params) =>
+      client.executeParams(sql, params);
 
   /// Drops the table if it exists and recreates it using the provided CREATE TABLE statement.
   Future<void> recreateTable(String createTableSql) async {
     // Attempt to extract table name from CREATE TABLE statement to drop it first.
     // Expect pattern like: CREATE TABLE [schema.]Name ( ... )
-    final match = RegExp(r'CREATE\s+TABLE\s+([^\s(]+)', caseSensitive: false).firstMatch(createTableSql);
+    final match = RegExp(
+      r'CREATE\s+TABLE\s+([^\s(]+)',
+      caseSensitive: false,
+    ).firstMatch(createTableSql);
     if (match != null) {
       final tableIdent = match.group(1)!;
-      // Normalize to two-part name with dbo if needed
-      final normalized = tableIdent.contains('.') ? tableIdent : 'dbo.${tableIdent.replaceAll(RegExp(r'^[\[]|[\]]$'), '')}';
-      await execute("IF OBJECT_ID('$normalized','U') IS NOT NULL DROP TABLE $normalized");
+      // Build raw (unbracketed) two-part name for OBJECT_ID and a bracketed form for DROP TABLE
+      String raw = tableIdent.replaceAll('[', '').replaceAll(']', '');
+      if (!raw.contains('.')) raw = 'dbo.$raw';
+      final parts = raw.split('.');
+      final bracketed = '[${parts[0]}].[${parts[1]}]';
+      await execute(
+        "IF OBJECT_ID(N'$raw', N'U') IS NOT NULL DROP TABLE $bracketed",
+      );
     }
     await execute(createTableSql);
   }
+}
+
+// Centralized test DB configuration
+class TestDbConfig {
+  final String ip;
+  final int port;
+  final String databaseName;
+  final String username;
+  final String password;
+
+  const TestDbConfig({
+    required this.ip,
+    required this.port,
+    required this.databaseName,
+    required this.username,
+    required this.password,
+  });
+
+  static TestDbConfig fromEnv() {
+    final env = Platform.environment;
+    return TestDbConfig(
+      ip: env['MSSQL_IP']?.trim().isNotEmpty == true
+          ? env['MSSQL_IP']!.trim()
+          : '127.0.0.1',
+      port: int.tryParse(env['MSSQL_PORT'] ?? '') ?? 1433,
+      databaseName: env['MSSQL_DB']?.trim().isNotEmpty == true
+          ? env['MSSQL_DB']!.trim()
+          : 'master',
+      username: env['MSSQL_USER']?.trim() ?? '',
+      password: env['MSSQL_PASSWORD']?.trim() ?? '',
+    );
+  }
+
+  static final TestDbConfig current = TestDbConfig.fromEnv();
 }

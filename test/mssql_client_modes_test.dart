@@ -5,21 +5,21 @@ import 'package:test/test.dart';
 import 'test_utils.dart';
 
 void main() {
-  group('MssqlClient Modes - Functional', () {
+  group('MssqlConnection Modes - Functional', () {
     test('easy: simple insert/select', () async {
       await runWithClientAndTempDb((client, db) async {
-        await client.execute('''
+        await client.writeData('''
           CREATE TABLE dbo.Items (
             id INT NOT NULL PRIMARY KEY,
             name NVARCHAR(100) NOT NULL
           )
         ''');
 
-        final ins = await client.executeParams(
+        await client.writeDataWithParams(
           'INSERT INTO dbo.Items (id, name) VALUES (@id, @name)',
           {'id': 1, 'name': 'hello'},
         );
-        final rowsJson = await client.query('SELECT id, name FROM dbo.Items');
+        final rowsJson = await client.getData('SELECT id, name FROM dbo.Items');
         final rows = parseRows(rowsJson);
         expect(rows.length, 1);
         expect(rows.first['id'], 1);
@@ -29,7 +29,7 @@ void main() {
 
     test('moderate: multiple types incl NULL and varbinary', () async {
       await runWithClientAndTempDb((client, db) async {
-        await client.execute('''
+        await client.writeData('''
           CREATE TABLE dbo.Items (
             id INT NOT NULL PRIMARY KEY,
             name NVARCHAR(100) NOT NULL,
@@ -39,7 +39,7 @@ void main() {
           )
         ''');
 
-        final ins = await client.executeParams(
+        await client.writeDataWithParams(
           'INSERT INTO dbo.Items (id, name, created, flag, data) VALUES (@id, @name, @created, @flag, @data)',
           {
             'id': 1,
@@ -49,7 +49,7 @@ void main() {
             'data': Uint8List.fromList([1, 2, 3, 4]),
           },
         );
-        final rowsJson = await client.query(
+        final rowsJson = await client.getData(
           'SELECT id, name, flag, DATALENGTH(data) AS data_len FROM dbo.Items',
         );
         final rows = parseRows(rowsJson);
@@ -63,16 +63,16 @@ void main() {
 
     test('hard: multi-row insert and filtered select', () async {
       await runWithClientAndTempDb((client, db) async {
-        await client.execute(
+        await client.writeData(
           'CREATE TABLE dbo.Items (id INT PRIMARY KEY, name NVARCHAR(100) NOT NULL)',
         );
         for (var i = 1; i <= 5; i++) {
-          await client.executeParams(
+          await client.writeDataWithParams(
             'INSERT INTO dbo.Items (id, name) VALUES (@id, @name)',
             {'id': i, 'name': 'name_$i'},
           );
         }
-        final rowsJson = await client.query(
+        final rowsJson = await client.getData(
           'SELECT id, name FROM dbo.Items WHERE name LIKE \u0027name_%\u0027 ORDER BY id',
         );
         final rows = parseRows(rowsJson);
@@ -84,25 +84,25 @@ void main() {
 
     test('complex: mixed operations and verification', () async {
       await runWithClientAndTempDb((client, db) async {
-        await client.execute(
+        await client.writeData(
           'CREATE TABLE dbo.Items (id INT PRIMARY KEY, name NVARCHAR(100) NOT NULL, flag BIT NULL)',
         );
         // Insert two
-        await client.executeParams(
+        await client.writeDataWithParams(
           'INSERT INTO dbo.Items (id, name, flag) VALUES (@id, @name, @flag)',
           {'id': 1, 'name': 'alpha', 'flag': true},
         );
-        await client.executeParams(
+        await client.writeDataWithParams(
           'INSERT INTO dbo.Items (id, name, flag) VALUES (@id, @name, @flag)',
           {'id': 2, 'name': 'beta', 'flag': false},
         );
         // Update one
-        await client.executeParams(
+        await client.writeDataWithParams(
           'UPDATE dbo.Items SET flag=@flag WHERE id=@id',
           {'id': 2, 'flag': true},
         );
         // Select check
-        final rowsJson = await client.query(
+        final rowsJson = await client.getData(
           'SELECT COUNT(*) AS cnt, SUM(CASE WHEN flag=1 THEN 1 ELSE 0 END) AS flagged FROM dbo.Items',
         );
         final rows = parseRows(rowsJson);
@@ -111,7 +111,7 @@ void main() {
       });
     });
   });
-  group('MssqlClient Modes - Functional (bulk)', () {
+  group('MssqlConnection Modes - Functional (bulk)', () {
     final harness = TempDbHarness();
     setUpAll(() async {
       await harness.init();

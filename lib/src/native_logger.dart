@@ -1,5 +1,5 @@
 class NativeLogger {
-  static bool enabled = false;
+  static bool enabled = true;
 
   static void i(String message) {
     if (!enabled) return;

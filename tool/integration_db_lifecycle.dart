@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'package:mssql_connection/mssql_connection.dart';
 
 Future<int> main() async {
@@ -7,9 +8,20 @@ Future<int> main() async {
   const username = 'sa';
   const password = 'eSeal@123';
 
-  final client = MssqlClient(server: server, username: username, password: password);
-  print("Connecting...");
-  final ok = await client.connect();
+  // Parse server into ip/port
+  final parts = server.split(':');
+  final ip = parts.isNotEmpty ? parts.first : '127.0.0.1';
+  final port = parts.length > 1 ? parts[1] : '1433';
+
+  final conn = MssqlConnection.getInstance();
+  print('Connecting to master...');
+  final ok = await conn.connect(
+    ip: ip,
+    port: port,
+    databaseName: 'master',
+    username: username,
+    password: password,
+  );
   if (!ok) {
     print('CONNECT FAILED');
     return 1;
@@ -21,15 +33,16 @@ Future<int> main() async {
   try {
     // Create DB
     print('Creating DB...');
-    print(await client.execute('CREATE DATABASE [$dbName]'));
+    print(await conn.writeData('CREATE DATABASE [$dbName]'));
 
     // Switch context
     print('Using DB...');
-    print(await client.execute('USE [$dbName]'));
+    print(await conn.writeData('USE [$dbName]'));
 
     // Create table
     print('Creating table...');
-    print(await client.execute('''
+    print(
+      await conn.writeData('''
       CREATE TABLE dbo.Items (
         id INT NOT NULL PRIMARY KEY,
         name NVARCHAR(100) NOT NULL,
@@ -37,18 +50,19 @@ Future<int> main() async {
         flag BIT NULL,
         data VARBINARY(MAX) NULL
       )
-    '''));
+    '''),
+    );
 
     // Insert via sp_executesql with explicit types
     print('Inserting row via params...');
-    final insertRes = await client.executeParams(
+    final insertRes = await conn.writeDataWithParams(
       'INSERT INTO dbo.Items (id, name, created, flag, data) VALUES (@id, @name, @created, @flag, @data)',
       {
         'id': 1,
         'name': 'hello',
         'created': DateTime.now(),
         'flag': true,
-        'data': Uint8List.fromList([1, 2, 3, 4])
+        'data': Uint8List.fromList([1, 2, 3, 4]),
       },
     );
     print(insertRes);
@@ -56,7 +70,9 @@ Future<int> main() async {
     // await Future.delayed(const Duration(minutes: 5));
     // Query back
     print('Selecting rows...');
-    final rowsJson = await client.query('SELECT id, name, created, flag, DATALENGTH(data) AS data_len FROM dbo.Items');
+    final rowsJson = await conn.getData(
+      'SELECT id, name, created, flag, DATALENGTH(data) AS data_len FROM dbo.Items',
+    );
     print(rowsJson);
   } catch (e) {
     print('ERROR: $e');
@@ -64,13 +80,15 @@ Future<int> main() async {
     // Always drop DB; force single_user to avoid locks
     print('Dropping DB...');
     try {
-      await client.execute('USE master');
-      await client.execute('ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE');
-      print(await client.execute('DROP DATABASE [$dbName]'));
+      await conn.writeData('USE master');
+      await conn.writeData(
+        'ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE',
+      );
+      print(await conn.writeData('DROP DATABASE [$dbName]'));
     } catch (e) {
       print('Drop DB error: $e');
     }
-    await client.close();
+    await conn.disconnect();
   }
 
   return 0;
