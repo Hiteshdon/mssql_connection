@@ -111,17 +111,17 @@ void main() {
 
     test('bulkInsert inserts multiple rows', () async {
       await conn.writeData(
-        'CREATE TABLE dbo.Bulk (id INT NOT NULL, flag BIT NOT NULL, note NVARCHAR(100) NULL)',
+        'CREATE TABLE dbo.[Bulk] (id INT NOT NULL, flag BIT NOT NULL, note NVARCHAR(100) NULL)',
       );
       final rows = [
         {'id': 1, 'flag': true, 'note': 'a'},
         {'id': 2, 'flag': false, 'note': 'b'},
         {'id': 3, 'flag': true, 'note': 'c'},
       ];
-      final inserted = await conn.bulkInsert('dbo.Bulk', rows, batchSize: 2);
+      final inserted = await conn.bulkInsert('dbo.[Bulk]', rows, batchSize: 2);
       expect(inserted, rows.length);
       final out = parseRows(
-        await conn.getData('SELECT COUNT(*) AS cnt FROM dbo.Bulk'),
+        await conn.getData('SELECT COUNT(*) AS cnt FROM dbo.[Bulk]'),
       );
       expect(out.first['cnt'], rows.length);
     });

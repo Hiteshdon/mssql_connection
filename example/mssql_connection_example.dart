@@ -63,12 +63,37 @@ Future<void> main() async {
 
   // Basic DDL/DML using write helpers
   await conn.writeData(
-    'CREATE TABLE #tmp (id INT PRIMARY KEY, name NVARCHAR(50))',
+    'CREATE TABLE #tmp (id INT PRIMARY KEY, name NVARCHAR(50), age INT NULL)',
   );
-  await conn.writeDataWithParams(
+  final q3 = await conn.writeDataWithParams(
     'INSERT INTO #tmp (id, name) VALUES (@id, @name)',
     {'@id': 1, '@name': 'Alice'},
   );
+  print(q3);
+  final q4 = await conn.writeDataWithParams(
+    'INSERT INTO #tmp (id, name) VALUES (@id, @name)',
+    {'@id': 2, '@name': 'Alice'},
+  );
+  print(q4);
+  final q5 = await conn.writeDataWithParams(
+    'UPDATE #tmp SET age = @age WHERE name = @name',
+    {'@id': 2, '@name': 'Alice', '@age': 30},
+  );
+  print(q5);
+  // Verify rows before bulk insert
+  print(await conn.getData('SELECT * FROM #tmp'));
+  // Bulk insert
+  final bulkRows = [
+    {'id': 3, 'name': 'Bob', 'age': 25},
+    {'id': 4, 'name': 'Charlie', 'age': 35},
+  ];
+  final bulkResult = await conn.bulkInsert(
+    '#tmp',
+    bulkRows,
+    columns: ['id', 'name', 'age'],
+  );
+  print('Bulk insert result: $bulkResult');
+  // Verify rows after bulk insert
   print(await conn.getData('SELECT * FROM #tmp'));
 
   await conn.disconnect();

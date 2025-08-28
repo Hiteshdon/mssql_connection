@@ -129,8 +129,8 @@ class NativeLoader {
           // Preload using LoadLibraryExW so dependencies resolve from same dir
           _preloadWithAlteredSearchPath(ct);
           NativeLogger.i('Windows[DB]: preload $ct');
-          _preloadWithAlteredSearchPath(db);
-          NativeLogger.i('Windows[DB]: preload $db');
+          // _preloadWithAlteredSearchPath(db);
+          // NativeLogger.i('Windows[DB]: preload $db');
           tried.add(ct + (File(ct).existsSync() ? ' (exists)' : ' (missing)'));
           tried.add(db + (File(db).existsSync() ? ' (exists)' : ' (missing)'));
           NativeLogger.i('Windows[DB]: opening $db');

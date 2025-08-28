@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'ffi/freetds_bindings.dart';
 import 'mssql_client.dart';
 import 'native_logger.dart';
 
@@ -36,21 +35,13 @@ class MssqlConnection {
     _timeoutInSeconds = timeoutInSeconds;
 
     try {
-      // Apply global timeouts before creating the connection.
-      final db = DBLib.load();
-      try {
-        // Best-effort; ignore return codes here, we'll surface errors on connect.
-        db.dbsetlogintime(timeoutInSeconds);
-        db.dbsettime(timeoutInSeconds);
-      } catch (_) {}
-
       final server = '$ip:$port';
       _client = MssqlClient(
         server: server,
         username: username,
         password: password,
       );
-      final ok = await _client!.connect();
+      final ok = await _client!.connect(loginTimeoutSeconds: timeoutInSeconds);
       if (!ok) return false;
 
       // Select database for this session.

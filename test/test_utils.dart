@@ -64,7 +64,7 @@ extension _TestClientCompat on MssqlConnection {
       writeDataWithParams(sql, params);
 }
 
-Future<Map<String, dynamic>> parseJson(String jsonStr) async =>
+Map<String, dynamic> parseJson(String jsonStr) =>
     json.decode(jsonStr) as Map<String, dynamic>;
 List<dynamic> parseRows(String jsonStr) =>
     (json.decode(jsonStr) as Map<String, dynamic>)['rows'] as List<dynamic>;

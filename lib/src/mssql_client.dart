@@ -51,6 +51,14 @@ class MssqlClient {
       MssqlLogger.i('connect | op=init | status=start');
       _db ??= DBLib.load();
       _db!.dbinit();
+      // Install error and message handlers once per process (idempotent in DB-Lib)
+      try {
+        _db!.dberrhandle(kErrHandlerPtr);
+        _db!.dbmsghandle(kMsgHandlerPtr);
+        MssqlLogger.i('connect | op=handlers | status=installed');
+      } catch (e) {
+        MssqlLogger.w('connect | op=handlers | error=$e');
+      }
 
       // Configure login timeout (best set before attempting to connect)
       try {
@@ -172,6 +180,36 @@ class MssqlClient {
     final db = _db!;
     final dbproc = _dbproc!;
 
+    // If inserting into a temp table (e.g., #tmp), fall back to parameterized INSERTs.
+    // BCP into temp tables is not consistently supported and can cause instability.
+    final tn = tableName.trim();
+    if (tn.startsWith('#')) {
+      final cols = (columns != null && columns.isNotEmpty)
+          ? List<String>.from(columns)
+          : rows.first.keys.toList(growable: false);
+      int total = 0;
+      for (final row in rows) {
+        final colList = cols
+            .map((c) => '[${c.replaceAll(']', ']]')}]')
+            .join(', ');
+        final placeholders = cols.map((c) => '@$c').join(', ');
+        final sql = 'INSERT INTO $tableName ($colList) VALUES ($placeholders)';
+        final pm = <String, dynamic>{};
+        for (final c in cols) {
+          pm['@$c'] = row[c];
+        }
+        final res = await executeParams(sql, pm);
+        try {
+          final j = jsonDecode(res);
+          final affected = (j['affected'] is int) ? j['affected'] as int : 0;
+          if (affected > 0) total += 1;
+        } catch (_) {
+          // On parse error, assume failure for that row
+        }
+      }
+      return total;
+    }
+
     // Determine columns
     final cols = (columns != null && columns.isNotEmpty)
         ? List<String>.from(columns)
@@ -280,20 +318,24 @@ class MssqlClient {
       final rc1 = db.dbcmd(dbproc, cmd);
       if (rc1 != SUCCEED) {
         MssqlLogger.e('execute | op=dbcmd | rc=$rc1 | error=fail');
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbcmd failed',
+          'error': em ?? 'dbcmd failed',
         });
       }
       MssqlLogger.i('execute | op=dbsqlexec');
       final rc2 = db.dbsqlexec(dbproc);
       if (rc2 != SUCCEED) {
         MssqlLogger.e('execute | op=dbsqlexec | rc=$rc2 | error=fail');
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbsqlexec failed',
+          'error': em ?? 'dbsqlexec failed',
         });
       }
 
@@ -336,14 +378,12 @@ class MssqlClient {
     }
     final declStr = decls.join(', ');
 
-    // Prepare RPC call: sp_executesql(@stmt NVARCHAR(MAX), @params NVARCHAR(MAX), <params...>)
+    // Prepare RPC call: sp_executesql(@stmt, @params, <params...>) with dynamic string encoding
     final rpcName = 'sp_executesql'.toNativeUtf8();
-    final stmtUtf16 = _utf16leEncode(sql);
-    final paramsUtf16 = _utf16leEncode(declStr);
+    final _StringDbBuf stmtBuf = _encodeStringSmart(sql);
+    final _StringDbBuf paramsBuf = _encodeStringSmart(declStr);
 
-    // Allocate native buffers for @stmt and @params
-    Pointer<Uint8>? stmtPtr;
-    Pointer<Uint8>? paramsPtr;
+    // We'll pass Utf8 pointers directly; no extra copies
     final tempAllocations = <_TempBuf>[]; // values for user params
 
     try {
@@ -351,60 +391,85 @@ class MssqlClient {
       final rcInit = db.dbrpcinit(dbproc, rpcName, 0);
       if (rcInit != SUCCEED) {
         MssqlLogger.e('executeParams | op=dbrpcinit | rc=$rcInit | error=fail');
+        // In case previous RPC left state dirty, attempt a reset
+        try {
+          final empty = ''.toNativeUtf8();
+          db.dbrpcinit(dbproc, empty, DBRPCRESET);
+          malloc.free(empty);
+        } catch (_) {}
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbrpcinit failed',
+          'error': em ?? 'dbrpcinit failed',
         });
       }
 
-      // @stmt NVARCHAR
-      stmtPtr = malloc<Uint8>(stmtUtf16.length);
-      stmtPtr.asTypedList(stmtUtf16.length).setAll(0, stmtUtf16);
+      // @stmt (VARCHAR or NVARCHAR based on content)
       final nameStmt = '@stmt'.toNativeUtf8();
       final rcP1 = db.dbrpcparam(
         dbproc,
         nameStmt,
         0,
-        SYBNVARCHAR,
-        stmtUtf16.length,
-        stmtUtf16.length,
-        stmtPtr,
+        stmtBuf.type,
+        -1, // maxlen: -1 for non-OUTPUT
+        // datalen: for NVARCHAR pass character count, for VARCHAR pass bytes
+        (stmtBuf.type == SYBNVARCHAR)
+            ? (stmtBuf.buf.length >> 1)
+            : stmtBuf.buf.length,
+        stmtBuf.buf.ptr,
       );
       malloc.free(nameStmt);
       if (rcP1 != SUCCEED) {
         MssqlLogger.e(
           'executeParams | op=dbrpcparam | name=@stmt | rc=$rcP1 | error=fail',
         );
+        // Reset RPC state to allow future dbrpcinit calls
+        try {
+          final z = ''.toNativeUtf8();
+          db.dbrpcinit(dbproc, z, DBRPCRESET);
+          malloc.free(z);
+        } catch (_) {}
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbrpcparam @stmt failed',
+          'error': em ?? 'dbrpcparam @stmt failed',
         });
       }
 
-      // @params NVARCHAR (can be empty)
-      paramsPtr = malloc<Uint8>(paramsUtf16.length);
-      paramsPtr.asTypedList(paramsUtf16.length).setAll(0, paramsUtf16);
+      // @params (can be empty) as VARCHAR or NVARCHAR based on content
       final nameParams = '@params'.toNativeUtf8();
       final rcP2 = db.dbrpcparam(
         dbproc,
         nameParams,
         0,
-        SYBNVARCHAR,
-        paramsUtf16.length,
-        paramsUtf16.length,
-        paramsPtr,
+        paramsBuf.type,
+        -1, // maxlen: -1 for non-OUTPUT
+        // datalen: for NVARCHAR pass character count, for VARCHAR pass bytes
+        (paramsBuf.type == SYBNVARCHAR)
+            ? (paramsBuf.buf.length >> 1)
+            : paramsBuf.buf.length,
+        paramsBuf.buf.ptr,
       );
       malloc.free(nameParams);
       if (rcP2 != SUCCEED) {
         MssqlLogger.e(
           'executeParams | op=dbrpcparam | name=@params | rc=$rcP2 | error=fail',
         );
+        try {
+          final z = ''.toNativeUtf8();
+          db.dbrpcinit(dbproc, z, DBRPCRESET);
+          malloc.free(z);
+        } catch (_) {}
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbrpcparam @params failed',
+          'error': em ?? 'dbrpcparam @params failed',
         });
       }
 
@@ -420,8 +485,12 @@ class MssqlClient {
           cname,
           0, // input param
           rpcVal.type,
-          rpcVal.buf.length,
-          rpcVal.buf.length,
+          -1, // maxlen: -1 for non-OUTPUT
+          (rpcVal.type == SYBNVARCHAR)
+              ? (rpcVal.buf.length << 1)
+              : rpcVal
+                    .buf
+                    .length, // datalen: for NVARCHAR pass character count; for others, bytes
           rpcVal.buf.ptr,
         );
         malloc.free(cname);
@@ -429,10 +498,18 @@ class MssqlClient {
           MssqlLogger.e(
             'executeParams | op=dbrpcparam | name=$name | rc=$rcPi | error=fail',
           );
+          try {
+            final z = ''.toNativeUtf8();
+            db.dbrpcinit(dbproc, z, DBRPCRESET);
+            malloc.free(z);
+          } catch (_) {}
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
           return jsonEncode({
+            'columns': <dynamic>[],
             'rows': <dynamic>[],
             'affected': 0,
-            'error': 'dbrpcparam failed',
+            'error': em ?? 'dbrpcparam failed',
           });
         }
       }
@@ -441,10 +518,12 @@ class MssqlClient {
       final rcSend = db.dbrpcsend(dbproc);
       if (rcSend != SUCCEED) {
         MssqlLogger.e('executeParams | op=dbrpcsend | rc=$rcSend | error=fail');
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbrpcsend failed',
+          'error': em ?? 'dbrpcsend failed',
         });
       }
 
@@ -452,10 +531,12 @@ class MssqlClient {
       final rcOk = db.dbsqlok(dbproc);
       if (rcOk != SUCCEED) {
         MssqlLogger.e('executeParams | op=dbsqlok | rc=$rcOk | error=fail');
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         return jsonEncode({
+          'columns': <dynamic>[],
           'rows': <dynamic>[],
           'affected': 0,
-          'error': 'dbsqlok failed',
+          'error': em ?? 'dbsqlok failed',
         });
       }
 
@@ -463,8 +544,8 @@ class MssqlClient {
       return _collectResults(db, dbproc);
     } finally {
       // Free buffers for @stmt/@params and user param values
-      if (stmtPtr != null) malloc.free(stmtPtr);
-      if (paramsPtr != null) malloc.free(paramsPtr);
+      malloc.free(stmtBuf.buf.ptr);
+      malloc.free(paramsBuf.buf.ptr);
       for (final t in tempAllocations) {
         malloc.free(t.ptr);
       }
@@ -525,7 +606,6 @@ class MssqlClient {
       // Fetch rows only for the first schema-bearing result set
       int fetched = 0;
       if (ncols > 0 && capturedFirstSet && columns.isNotEmpty) {
-
         while (true) {
           final nr = db.dbnextrow(dbproc);
           if (nr == NO_MORE_ROWS) break;
@@ -597,7 +677,9 @@ class MssqlClient {
       name.startsWith('@') ? name : '@$name';
 
   static String _inferSqlType(dynamic v) {
-    if (v == null) return 'sql_variant'; // value will be NULL
+    // For NULL values, avoid sql_variant which cannot implicitly convert to many types.
+    // Use NVARCHAR(MAX) so NULL can bind safely to any nullable target type.
+    if (v == null) return 'nvarchar(max)';
     if (v is bool) return 'bit';
     if (v is int) {
       // choose bigint if outside 32-bit range
@@ -606,7 +688,9 @@ class MssqlClient {
     }
     if (v is double) return 'float';
     if (v is String) return 'nvarchar(max)';
-    if (v is DateTime) return 'datetime2';
+    // Declare DateTime parameters as NVARCHAR and let SQL convert explicitly
+    // (e.g., CONVERT(datetime2, @when)). This avoids binary TDS packing.
+    if (v is DateTime) return 'nvarchar(50)';
     if (v is Uint8List) return 'varbinary(max)';
     // Fallback to NVARCHAR
     return 'nvarchar(max)';
@@ -633,8 +717,8 @@ int _hostTypeFor(dynamic v) {
   if (v is double) return SYBFLT8;
   if (v is bool) return SYBBIT;
   if (v is Uint8List) return SYBVARBINARY;
-  // Default to varchar for everything else (String/DateTime/etc.)
-  return SYBVARCHAR;
+  // Default to NVARCHAR for textual data to preserve Unicode and align with SQL Server
+  return SYBNVARCHAR;
 }
 
 _TempBuf _encodeForHost(int hostType, dynamic v) {
@@ -673,31 +757,25 @@ _TempBuf _encodeForHost(int hostType, dynamic v) {
     case SYBVARCHAR:
     default:
       {
+        // Encode as UTF-16LE for NVARCHAR host type; if type is actually SYBVARCHAR, SQL Server will convert.
         final s = (v is String)
             ? v
             : (v is DateTime)
             ? v.toIso8601String()
             : v.toString();
-        final bytes = utf8.encode(s);
-        final p = malloc<Uint8>(bytes.length);
-        p.asTypedList(bytes.length).setAll(0, bytes);
-        return _TempBuf(p, bytes.length);
+        final codeUnits = s.codeUnits;
+        // Each code unit to 2 bytes LE
+        final len = codeUnits.length * 2;
+        final p = malloc<Uint8>(len);
+        final view = p.asTypedList(len);
+        for (int i = 0, j = 0; i < codeUnits.length; i++, j += 2) {
+          final cu = codeUnits[i];
+          view[j] = cu & 0xFF;
+          view[j + 1] = (cu >> 8) & 0xFF;
+        }
+        return _TempBuf(p, len);
       }
   }
-}
-
-// --- RPC encoding helpers ---
-
-// Encode a Dart String into UTF-16LE bytes (no terminator).
-Uint8List _utf16leEncode(String s) {
-  final codes = s.codeUnits; // UTF-16 code units
-  final out = Uint8List(codes.length * 2);
-  for (var i = 0; i < codes.length; i++) {
-    final c = codes[i];
-    out[i * 2] = c & 0xFF;
-    out[i * 2 + 1] = (c >> 8) & 0xFF;
-  }
-  return out;
 }
 
 // Map a Dart value to a DB-Lib type code and native buffer suitable for dbrpcparam.
@@ -736,14 +814,61 @@ _RpcVal _encodeForRpc(dynamic v) {
     p.asTypedList(v.length).setAll(0, v);
     return _RpcVal(SYBVARBINARY, _TempBuf(p, v.length));
   }
-  // Strings, DateTime, and other objects -> NVARCHAR
-  final s = (v is String)
-      ? v
-      : (v is DateTime)
-      ? v.toUtc().toIso8601String()
-      : v.toString();
-  final bytes = _utf16leEncode(s);
-  final p = malloc<Uint8>(bytes.length);
-  p.asTypedList(bytes.length).setAll(0, bytes);
-  return _RpcVal(SYBNVARCHAR, _TempBuf(p, bytes.length));
+  // Strings, DateTime, and other objects -> choose VARCHAR/UTF-16 NVARCHAR based on content
+  if (v is String) {
+    final sb = _encodeStringSmart(v);
+    return _RpcVal(sb.type, sb.buf);
+  }
+  if (v is DateTime) {
+    final s = _formatDateTimeForSql(v); // ASCII only
+    final bytes = utf8.encode(s);
+    final p = malloc<Uint8>(bytes.length);
+    p.asTypedList(bytes.length).setAll(0, bytes);
+    return _RpcVal(SYBVARCHAR, _TempBuf(p, bytes.length));
+  }
+  final s = v.toString();
+  final sb = _encodeStringSmart(s);
+  return _RpcVal(sb.type, sb.buf);
+}
+
+// Format DateTime in an ISO-like pattern accepted by SQL Server, without 'Z'.
+// Example: 2025-08-28T02:34:56
+String _formatDateTimeForSql(DateTime dt) {
+  final d = dt.toUtc();
+  String two(int n) => n < 10 ? '0$n' : '$n';
+  return '${d.year.toString().padLeft(4, '0')}-${two(d.month)}-${two(d.day)}T${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
+}
+
+class _StringDbBuf {
+  final int type; // SYBVARCHAR or SYBNVARCHAR
+  final _TempBuf buf;
+  _StringDbBuf(this.type, this.buf);
+}
+
+// Encode a Dart string as either UTF-8 (VARCHAR) if ASCII-only, or UTF-16LE (NVARCHAR) if it contains non-ASCII.
+_StringDbBuf _encodeStringSmart(String s) {
+  bool ascii = true;
+  final units = s.codeUnits;
+  for (final cu in units) {
+    if (cu > 0x7F) {
+      ascii = false;
+      break;
+    }
+  }
+  if (ascii) {
+    final bytes = utf8.encode(s);
+    final p = malloc<Uint8>(bytes.length);
+    p.asTypedList(bytes.length).setAll(0, bytes);
+    return _StringDbBuf(SYBVARCHAR, _TempBuf(p, bytes.length));
+  }
+  // UTF-16LE encode
+  final len = units.length * 2;
+  final p = malloc<Uint8>(len);
+  final view = p.asTypedList(len);
+  for (int i = 0, j = 0; i < units.length; i++, j += 2) {
+    final cu = units[i];
+    view[j] = cu & 0xFF;
+    view[j + 1] = (cu >> 8) & 0xFF;
+  }
+  return _StringDbBuf(SYBNVARCHAR, _TempBuf(p, len));
 }

@@ -1,5 +1,5 @@
 class NativeLogger {
-  static bool enabled = true;
+  static bool enabled = false;
 
   static void i(String message) {
     if (!enabled) return;
@@ -24,7 +24,7 @@ class NativeLogger {
 }
 
 class MssqlLogger {
-  static bool enabled = true;
+  static bool enabled = false;
 
   static void i(String message) {
     if (!enabled) return;

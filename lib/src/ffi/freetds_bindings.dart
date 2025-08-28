@@ -32,6 +32,19 @@ String _utf16leDecode(Uint8List bytes) {
   return String.fromCharCodes(codes);
 }
 
+// Heuristic: detect if a byte array likely contains UTF-16LE encoded text mistakenly
+// tagged as VARCHAR (i.e., ASCII bytes with 0x00 interleaved). We check for even length
+// and a high ratio of zero bytes in odd positions.
+bool _looksUtf16LeText(Uint8List bytes) {
+  if (bytes.length < 2 || (bytes.length & 1) == 1) return false;
+  // If any odd index contains 0x00, it's likely UTF-16LE (for ASCII-range chars)
+  // Allow odd-length inputs; the last trailing byte will be ignored by the decoder.
+  for (int i = 1; i < bytes.length; i += 2) {
+    if (bytes[i] == 0) return true;
+  }
+  return false;
+}
+
 base class LOGINREC extends Opaque {}
 
 // Common return codes
@@ -89,6 +102,12 @@ const int DBSETBCP = 6; // enable BCP on LOGINREC
 // Per sybdb.h, DBSETUSER and DBSETPWD constants used with dbsetlname()
 const int DBSETUSER = 2;
 const int DBSETPWD = 3;
+
+// RPC options (per sybdb.h)
+// DBRPCRECOMPILE causes the stored procedure to be recompiled before executing.
+// DBRPCRESET cancels any pending RPC(s) and resets the internal RPC state.
+const int DBRPCRECOMPILE = 0x0001;
+const int DBRPCRESET = 0x0002;
 
 // Typedefs
 //
@@ -220,6 +239,47 @@ typedef _dbrpcsendDart = int Function(Pointer<DBPROCESS>);
 /// C: int dbsqlok(DBPROCESS*) — Finalize send; proceed to dbresults/dbnextrow
 typedef _dbsqlokC = Int32 Function(Pointer<DBPROCESS>);
 typedef _dbsqlokDart = int Function(Pointer<DBPROCESS>);
+
+// Group: Error and message handlers
+/// C: EHANDLEFUNC dberrhandle(EHANDLEFUNC handler)
+typedef _errHandlerSigC =
+    Int32 Function(
+      Pointer<DBPROCESS>,
+      Int32 /*severity*/,
+      Int32 /*dberr*/,
+      Int32 /*oserr*/,
+      Pointer<Utf8> /*dberrstr*/,
+      Pointer<Utf8> /*oserrstr*/,
+    );
+typedef _dberrhandleC =
+    Pointer<NativeFunction<_errHandlerSigC>> Function(
+      Pointer<NativeFunction<_errHandlerSigC>>,
+    );
+typedef _dberrhandleDart =
+    Pointer<NativeFunction<_errHandlerSigC>> Function(
+      Pointer<NativeFunction<_errHandlerSigC>>,
+    );
+
+/// C: MHANDLEFUNC dbmsghandle(MHANDLEFUNC handler)
+typedef _msgHandlerSigC =
+    Int32 Function(
+      Pointer<DBPROCESS>,
+      Int32 /*msgno*/,
+      Int32 /*msgstate*/,
+      Int32 /*severity*/,
+      Pointer<Utf8> /*msgtext*/,
+      Pointer<Utf8> /*server*/,
+      Pointer<Utf8> /*proc*/,
+      Int32 /*line*/,
+    );
+typedef _dbmsghandleC =
+    Pointer<NativeFunction<_msgHandlerSigC>> Function(
+      Pointer<NativeFunction<_msgHandlerSigC>>,
+    );
+typedef _dbmsghandleDart =
+    Pointer<NativeFunction<_msgHandlerSigC>> Function(
+      Pointer<NativeFunction<_msgHandlerSigC>>,
+    );
 
 // Group: BCP (bulk copy) — high-throughput inserts
 /// C: int bcp_init(DBPROCESS*, const char* table, const char* datafile,
@@ -374,6 +434,8 @@ class DBLib {
   late final _dbrpcparamDart dbrpcparam;
   late final _dbrpcsendDart dbrpcsend;
   late final _dbsqlokDart dbsqlok;
+  late final _dberrhandleDart dberrhandle;
+  late final _dbmsghandleDart dbmsghandle;
 
   late final _bcp_initDart bcp_init;
   late final _bcp_bindDart bcp_bind;
@@ -464,6 +526,14 @@ class DBLib {
       'dbsqlok',
     ); // Finalize send
 
+    // Lookups: error and message handlers
+    dberrhandle = _lib.lookupFunction<_dberrhandleC, _dberrhandleDart>(
+      'dberrhandle',
+    );
+    dbmsghandle = _lib.lookupFunction<_dbmsghandleC, _dbmsghandleDart>(
+      'dbmsghandle',
+    );
+
     // Lookups: BCP (bulk copy) high-throughput inserts
     bcp_init = _lib.lookupFunction<_bcp_initC, _bcp_initDart>(
       'bcp_init',
@@ -522,7 +592,79 @@ class DBLib {
       dbsetlname(login, password, DBSETPWD);
 
   static DBLib load() => DBLib(NativeLoader.loadDBLib());
+
+  // Expose latest DB-Lib error/message captured by installed handlers.
+  // These are per-DBPROCESS (or 0 for library-level) and are cleared on read.
+  static String? takeLastError(Pointer<DBPROCESS>? dbproc) =>
+      _DbLibErrorStore.takeLastError(dbproc);
+  static String? takeLastMessage(Pointer<DBPROCESS>? dbproc) =>
+      _DbLibErrorStore.takeLastMessage(dbproc);
 }
+
+// Simple global store for the latest error/message per DBPROCESS.
+class _DbLibErrorStore {
+  static final Map<int, String> _lastError = <int, String>{};
+  static final Map<int, String> _lastMessage = <int, String>{};
+  static String? takeLastError(Pointer<DBPROCESS>? dbproc) {
+    final k = dbproc == null || dbproc == nullptr ? 0 : dbproc.address;
+    return _lastError.remove(k);
+  }
+
+  static void setLastError(Pointer<DBPROCESS>? dbproc, String msg) {
+    final k = dbproc == null || dbproc == nullptr ? 0 : dbproc.address;
+    _lastError[k] = msg;
+  }
+
+  static String? takeLastMessage(Pointer<DBPROCESS>? dbproc) {
+    final k = dbproc == null || dbproc == nullptr ? 0 : dbproc.address;
+    return _lastMessage.remove(k);
+  }
+
+  static void setLastMessage(Pointer<DBPROCESS>? dbproc, String msg) {
+    final k = dbproc == null || dbproc == nullptr ? 0 : dbproc.address;
+    _lastMessage[k] = msg;
+  }
+}
+
+// Dart-side error handlers (installed via dberrhandle/dbmsghandle).
+int _dartDbErrHandler(
+  Pointer<DBPROCESS> dbproc,
+  int severity,
+  int dberr,
+  int oserr,
+  Pointer<Utf8> dberrstr,
+  Pointer<Utf8> oserrstr,
+) {
+  final msg =
+      '[severity=$severity dberr=$dberr oserr=$oserr] '
+      '${dberrstr == nullptr ? '' : dberrstr.toDartString()}'
+      '${oserrstr == nullptr ? '' : ' | ${oserrstr.toDartString()}'}';
+  _DbLibErrorStore.setLastError(dbproc, msg);
+  return 0; // per DB-Lib docs, return value ignored
+}
+
+int _dartDbMsgHandler(
+  Pointer<DBPROCESS> dbproc,
+  int msgno,
+  int msgstate,
+  int severity,
+  Pointer<Utf8> msgtext,
+  Pointer<Utf8> server,
+  Pointer<Utf8> proc,
+  int line,
+) {
+  final msg =
+      '[msgno=$msgno state=$msgstate severity=$severity line=$line] '
+      '${msgtext == nullptr ? '' : msgtext.toDartString()}';
+  _DbLibErrorStore.setLastMessage(dbproc, msg);
+  return 0;
+}
+
+// Exposed pointers for installation; keep them alive for the process lifetime.
+final Pointer<NativeFunction<_errHandlerSigC>> kErrHandlerPtr =
+    Pointer.fromFunction<_errHandlerSigC>(_dartDbErrHandler, 0);
+final Pointer<NativeFunction<_msgHandlerSigC>> kMsgHandlerPtr =
+    Pointer.fromFunction<_msgHandlerSigC>(_dartDbMsgHandler, 0);
 
 // Helpers to marshal bytes for dbdata()
 
@@ -638,13 +780,15 @@ dynamic decodeDbValue(int type, Pointer<Uint8> ptr, int len) {
     case SYBTEXT:
       {
         final bytes = ptr.asTypedList(len);
+  if (_looksUtf16LeText(bytes)) return _utf16leDecode(bytes);
         return utf8.decode(bytes, allowMalformed: true);
       }
     case SYBNTEXT:
     case SYBNVARCHAR:
       {
-        final bytes = ptr.asTypedList(len);
-        return _utf16leDecode(bytes);
+  // FreeTDS reports NVARCHAR length as characters; fetch 2 bytes per char
+  final bytes = ptr.asTypedList(len * 2);
+  return _utf16leDecode(bytes);
       }
     // For DECIMAL/NUMERIC/DATETIME, you may need proper conversion against TDS metadata.
     default:
