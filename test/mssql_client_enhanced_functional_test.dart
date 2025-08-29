@@ -892,7 +892,9 @@ void main() {
               product_id INT NOT NULL PRIMARY KEY,
               name NVARCHAR(100) NOT NULL,
               sku NVARCHAR(50) NOT NULL UNIQUE,
-              price DECIMAL(15,4) NOT NULL,
+              price DECIMAL(15,4) NOT NULL CHECK (price >= 0),
+              cost DECIMAL(15,4) NULL CHECK (cost >= 0),
+              weight DECIMAL(8,3) NULL CHECK (weight > 0),
               category_id INT NOT NULL,
               modified_date DATETIME2 DEFAULT GETDATE()
             );

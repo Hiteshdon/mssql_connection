@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
 import 'ffi/freetds_bindings.dart';
 import 'native_logger.dart';
+import 'sql_exception.dart';
 
 class MssqlClient {
   final String server;
@@ -124,6 +126,29 @@ class MssqlClient {
         return false;
       }
 
+      // Increase TEXT/NTEXT retrieval limit to avoid 4096-byte default truncation.
+      // Use T-SQL SET TEXTSIZE to ensure compatibility across DB-Lib variants.
+      try {
+        const String cmdText = 'SET TEXTSIZE 2147483647';
+        final setPtr = cmdText.toNativeUtf8();
+        try {
+          final rc1 = _db!.dbcmd(_dbproc!, setPtr);
+          MssqlLogger.i('connect | op=dbcmd | sql=SET TEXTSIZE | rc=$rc1');
+          if (rc1 == SUCCEED) {
+            final rc2 = _db!.dbsqlexec(_dbproc!);
+            MssqlLogger.i('connect | op=dbsqlexec | rc=$rc2');
+            if (rc2 == SUCCEED) {
+              // Drain the SET batch quietly
+              _collectResults(_db!, _dbproc!);
+            }
+          }
+        } finally {
+          malloc.free(setPtr);
+        }
+      } catch (e) {
+        MssqlLogger.w('connect | op=set-textsize | error=$e');
+      }
+
       _connected = true;
       MssqlLogger.i('connect | status=connected | server=$server');
       return true;
@@ -220,7 +245,7 @@ class MssqlClient {
     try {
       final rcInit = db.bcp_init(dbproc, tbl, nullptr, nullptr, DB_IN);
       if (rcInit != SUCCEED) {
-        throw StateError('bcp_init failed for $tableName');
+        throw SQLException('bcp_init failed for $tableName');
       }
 
       // Bind columns with host types; varaddr NULL, varlen -1, no terminator
@@ -240,7 +265,7 @@ class MssqlClient {
           i + 1,
         );
         if (rcBind != SUCCEED) {
-          throw StateError('bcp_bind failed for column ${i + 1}');
+          throw SQLException('bcp_bind failed for column ${i + 1}');
         }
       }
 
@@ -269,7 +294,7 @@ class MssqlClient {
           // Send the row
           final rcSend = db.bcp_sendrow(dbproc);
           if (rcSend != SUCCEED) {
-            throw StateError('bcp_sendrow failed');
+            throw SQLException('bcp_sendrow failed');
           }
           sent++;
 
@@ -277,7 +302,7 @@ class MssqlClient {
           if (batchSize > 0 && (sent % batchSize == 0)) {
             final b = db.bcp_batch(dbproc);
             if (b < 0) {
-              throw StateError('bcp_batch failed');
+              throw SQLException('bcp_batch failed');
             }
             total += b;
           }
@@ -292,7 +317,7 @@ class MssqlClient {
       // Finalize
       final done = db.bcp_done(dbproc);
       if (done < 0) {
-        throw StateError('bcp_done failed');
+        throw SQLException('bcp_done failed');
       }
       total += done;
       return total;
@@ -311,37 +336,81 @@ class MssqlClient {
     _ensureConnected();
     final db = _db!;
     final dbproc = _dbproc!;
-
-    final cmd = sql.toNativeUtf8();
-    try {
-      MssqlLogger.i('execute | op=dbcmd | sqlLen=${sql.length}');
-      final rc1 = db.dbcmd(dbproc, cmd);
-      if (rc1 != SUCCEED) {
-        MssqlLogger.e('execute | op=dbcmd | rc=$rc1 | error=fail');
-        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbcmd failed',
-        });
+    // Detect if we should enable strict SET options for this statement
+    final _SetPlan plan = _analyzeSetNeeds(sql);
+    if (plan.needsSet) {
+      // 1) Enable options in their own batch
+      final setCmd = plan.setPrefix.toNativeUtf8();
+      try {
+        MssqlLogger.i('execute | op=dbcmd | sqlLen=${plan.setPrefix.length}');
+        final rc1 = db.dbcmd(dbproc, setCmd);
+        if (rc1 != SUCCEED) {
+          MssqlLogger.e('execute | op=dbcmd | rc=$rc1 | error=fail');
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+          throw SQLException(em ?? 'dbcmd failed (SET options)');
+        }
+        MssqlLogger.i('execute | op=dbsqlexec');
+        final rc2 = db.dbsqlexec(dbproc);
+        if (rc2 != SUCCEED) {
+          MssqlLogger.e('execute | op=dbsqlexec | rc=$rc2 | error=fail');
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+          throw SQLException(em ?? 'dbsqlexec failed (SET options)');
+        }
+        // Drain results for SET batch
+        _collectResults(db, dbproc);
+      } finally {
+        malloc.free(setCmd);
       }
-      MssqlLogger.i('execute | op=dbsqlexec');
-      final rc2 = db.dbsqlexec(dbproc);
-      if (rc2 != SUCCEED) {
-        MssqlLogger.e('execute | op=dbsqlexec | rc=$rc2 | error=fail');
-        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbsqlexec failed',
-        });
-      }
 
-      return _collectResults(db, dbproc);
-    } finally {
-      malloc.free(cmd);
+      // 2) Execute the original SQL in its own batch (ensuring CREATE VIEW is first)
+      final cmd = sql.toNativeUtf8();
+      try {
+        MssqlLogger.i('execute | op=dbcmd | sqlLen=${sql.length}');
+        final rc1 = db.dbcmd(dbproc, cmd);
+        if (rc1 != SUCCEED) {
+          MssqlLogger.e('execute | op=dbcmd | rc=$rc1 | error=fail');
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+          throw SQLException(em ?? 'dbcmd failed');
+        }
+        MssqlLogger.i('execute | op=dbsqlexec');
+        final rc2 = db.dbsqlexec(dbproc);
+        if (rc2 != SUCCEED) {
+          MssqlLogger.e('execute | op=dbsqlexec | rc=$rc2 | error=fail');
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+          throw SQLException(em ?? 'dbsqlexec failed');
+        }
+        return _collectResults(db, dbproc);
+      } finally {
+        malloc.free(cmd);
+      }
+    } else {
+      // Regular path
+      final cmd = sql.toNativeUtf8();
+      try {
+        MssqlLogger.i('execute | op=dbcmd | sqlLen=${sql.length}');
+        final rc1 = db.dbcmd(dbproc, cmd);
+        if (rc1 != SUCCEED) {
+          MssqlLogger.e('execute | op=dbcmd | rc=$rc1 | error=fail');
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+          throw SQLException(em ?? 'dbcmd failed');
+        }
+        MssqlLogger.i('execute | op=dbsqlexec');
+        final rc2 = db.dbsqlexec(dbproc);
+        if (rc2 != SUCCEED) {
+          MssqlLogger.e('execute | op=dbsqlexec | rc=$rc2 | error=fail');
+          final em =
+              DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+          throw SQLException(em ?? 'dbsqlexec failed');
+        }
+        return _collectResults(db, dbproc);
+      } finally {
+        malloc.free(cmd);
+      }
     }
   }
 
@@ -398,12 +467,7 @@ class MssqlClient {
           malloc.free(empty);
         } catch (_) {}
         final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbrpcinit failed',
-        });
+        throw SQLException(em ?? 'dbrpcinit failed');
       }
 
       // @stmt (VARCHAR or NVARCHAR based on content)
@@ -432,12 +496,7 @@ class MssqlClient {
           malloc.free(z);
         } catch (_) {}
         final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbrpcparam @stmt failed',
-        });
+        throw SQLException(em ?? 'dbrpcparam @stmt failed');
       }
 
       // @params (can be empty) as VARCHAR or NVARCHAR based on content
@@ -465,12 +524,7 @@ class MssqlClient {
           malloc.free(z);
         } catch (_) {}
         final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbrpcparam @params failed',
-        });
+        throw SQLException(em ?? 'dbrpcparam @params failed');
       }
 
       // User parameters: add in the same order as declarations
@@ -505,12 +559,7 @@ class MssqlClient {
           } catch (_) {}
           final em =
               DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-          return jsonEncode({
-            'columns': <dynamic>[],
-            'rows': <dynamic>[],
-            'affected': 0,
-            'error': em ?? 'dbrpcparam failed',
-          });
+          throw SQLException(em ?? 'dbrpcparam failed');
         }
       }
 
@@ -519,12 +568,7 @@ class MssqlClient {
       if (rcSend != SUCCEED) {
         MssqlLogger.e('executeParams | op=dbrpcsend | rc=$rcSend | error=fail');
         final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbrpcsend failed',
-        });
+        throw SQLException(em ?? 'dbrpcsend failed');
       }
 
       MssqlLogger.i('executeParams | op=dbsqlok');
@@ -532,12 +576,7 @@ class MssqlClient {
       if (rcOk != SUCCEED) {
         MssqlLogger.e('executeParams | op=dbsqlok | rc=$rcOk | error=fail');
         final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
-        return jsonEncode({
-          'columns': <dynamic>[],
-          'rows': <dynamic>[],
-          'affected': 0,
-          'error': em ?? 'dbsqlok failed',
-        });
+        throw SQLException(em ?? 'dbsqlok failed');
       }
 
       // Read results via shared collector
@@ -669,7 +708,7 @@ class MssqlClient {
 
   void _ensureConnected() {
     if (!_connected || _dbproc == null || _dbproc == nullptr) {
-      throw StateError('Not connected. Call connect() first.');
+      throw SQLException('Not connected. Call connect() first.');
     }
   }
 
@@ -695,6 +734,46 @@ class MssqlClient {
     // Fallback to NVARCHAR
     return 'nvarchar(max)';
   }
+
+  // Analyze whether strict SET options are needed and generate the SET batch.
+  _SetPlan _analyzeSetNeeds(String sql) {
+    final trimmed = sql.trimLeft();
+    if (trimmed.isEmpty) return const _SetPlan(false, '');
+    final up = trimmed.toUpperCase();
+    final isDdl =
+        up.startsWith('CREATE ') ||
+        up.startsWith('ALTER ') ||
+        up.startsWith('DROP ');
+    final targetsStrict =
+        up.startsWith('CREATE VIEW ') ||
+        up.startsWith('ALTER VIEW ') ||
+        up.startsWith('CREATE TABLE ') ||
+        up.startsWith('ALTER TABLE ') ||
+        up.startsWith('CREATE INDEX ') ||
+        up.startsWith('ALTER INDEX ') ||
+        up.startsWith('CREATE FUNCTION ') ||
+        up.startsWith('ALTER FUNCTION ') ||
+        up.startsWith('CREATE PROCEDURE ') ||
+        up.startsWith('ALTER PROCEDURE ') ||
+        up.startsWith('CREATE TRIGGER ') ||
+        up.startsWith('ALTER TRIGGER ');
+    if (!(isDdl || targetsStrict)) return const _SetPlan(false, '');
+    const setPrefix =
+        'SET ANSI_NULLS ON; '
+        'SET QUOTED_IDENTIFIER ON; '
+        'SET ANSI_PADDING ON; '
+        'SET ANSI_WARNINGS ON; '
+        'SET CONCAT_NULL_YIELDS_NULL ON; '
+        'SET ARITHABORT ON; '
+        'SET NUMERIC_ROUNDABORT OFF;';
+    return const _SetPlan(true, setPrefix);
+  }
+}
+
+class _SetPlan {
+  final bool needsSet;
+  final String setPrefix;
+  const _SetPlan(this.needsSet, this.setPrefix);
 }
 
 class _TempBuf {

@@ -106,6 +106,12 @@ class MssqlConnection {
       return false;
     } finally {
       _client = null;
+  // Clear saved params so offline calls do not attempt implicit reconnect
+  _ip = null;
+  _port = null;
+  _database = null;
+  _username = null;
+  _password = null;
     }
   }
 

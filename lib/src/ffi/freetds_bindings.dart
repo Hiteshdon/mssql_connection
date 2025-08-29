@@ -99,6 +99,8 @@ const int SYBTIME = 51; // (sybase) time
 const int DB_IN = 1;
 // Login option selector (subset)
 const int DBSETBCP = 6; // enable BCP on LOGINREC
+// dbsetopt option IDs (subset)
+const int DBTEXTSIZE = 17; // set text size for large text retrieval
 // Per sybdb.h, DBSETUSER and DBSETPWD constants used with dbsetlname()
 const int DBSETUSER = 2;
 const int DBSETPWD = 3;
@@ -203,6 +205,12 @@ typedef _dbuseDart = int Function(Pointer<DBPROCESS>, Pointer<Utf8>);
 /// C: int dbsetlbool(LOGINREC*, int option, int value) — Toggle login options
 typedef _dbsetlboolC = Int32 Function(Pointer<LOGINREC>, Int32, Int32);
 typedef _dbsetlboolDart = int Function(Pointer<LOGINREC>, int, int);
+
+/// C: int dbsetopt(DBPROCESS*, int option, const char* char_param, int int_param)
+typedef _dbsetoptC =
+    Int32 Function(Pointer<DBPROCESS>, Int32, Pointer<Utf8>, Int32);
+typedef _dbsetoptDart =
+    int Function(Pointer<DBPROCESS>, int, Pointer<Utf8>, int);
 
 // Group: RPC for parameterized queries (e.g., sp_executesql)
 /// C: int dbrpcinit(DBPROCESS*, const char* rpcname, uint16_t options)
@@ -429,6 +437,7 @@ class DBLib {
   late final _dbsettimeDart dbsettime;
   late final _dbuseDart dbuse;
   late final _dbsetlboolDart dbsetlbool;
+  late final _dbsetoptDart dbsetopt;
 
   late final _dbrpcinitDart dbrpcinit;
   late final _dbrpcparamDart dbrpcparam;
@@ -511,6 +520,9 @@ class DBLib {
     dbsetlbool = _lib.lookupFunction<_dbsetlboolC, _dbsetlboolDart>(
       'dbsetlbool',
     ); // Toggle login options (e.g., BCP)
+    dbsetopt = _lib.lookupFunction<_dbsetoptC, _dbsetoptDart>(
+      'dbsetopt',
+    ); // Set session options (e.g., DBTEXTSIZE)
 
     // Lookups: RPC for parameterized queries
     dbrpcinit = _lib.lookupFunction<_dbrpcinitC, _dbrpcinitDart>(
@@ -780,15 +792,16 @@ dynamic decodeDbValue(int type, Pointer<Uint8> ptr, int len) {
     case SYBTEXT:
       {
         final bytes = ptr.asTypedList(len);
-  if (_looksUtf16LeText(bytes)) return _utf16leDecode(bytes);
+        if (_looksUtf16LeText(bytes)) return _utf16leDecode(bytes);
         return utf8.decode(bytes, allowMalformed: true);
       }
     case SYBNTEXT:
     case SYBNVARCHAR:
       {
-  // FreeTDS reports NVARCHAR length as characters; fetch 2 bytes per char
-  final bytes = ptr.asTypedList(len * 2);
-  return _utf16leDecode(bytes);
+  // NVARCHAR/NTEXT are UTF-16LE; dbdatlen returns the byte length.
+  // Decode exactly [len] bytes as UTF-16LE.
+  final bytes = ptr.asTypedList(len);
+        return _utf16leDecode(bytes);
       }
     // For DECIMAL/NUMERIC/DATETIME, you may need proper conversion against TDS metadata.
     default:

@@ -23,8 +23,7 @@
 				"test",
 				// "-r",
 				// "expanded"
-				".\\test\\mssql_client_modes_test.dart",
-				"expanded"
+				".\\test\\mssql_client_large_and_multilang_test.dart"
 			],
 			"problemMatcher": [
 				"$dart-test"
@@ -39,8 +38,7 @@
 				"test",
 				// "-r",
 				// "expanded"
-				".\\test\\mssql_client_modes_test.dart",
-				"expanded"
+				".\\test\\mssql_client_large_and_multilang_test.dart",
 			],
 			"problemMatcher": [
 				"$dart-test"

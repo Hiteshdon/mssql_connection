@@ -4,3 +4,4 @@
 library;
 
 export 'src/mssql_connection.dart';
+export 'src/sql_exception.dart';
