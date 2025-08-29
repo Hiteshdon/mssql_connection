@@ -8,7 +8,6 @@
 			"args": [
 				"run",
 				".\\example\\mssql_connection_example.dart",
-				// "expanded"
 			],
 			"problemMatcher": [
 				"$dart-test"
@@ -21,9 +20,9 @@
 			"command": "dart",
 			"args": [
 				"test",
-				// "-r",
-				// "expanded"
-				".\\test\\mssql_client_large_and_multilang_test.dart"
+				"-r",
+				"expanded"
+				// ".\\test\\mssql_negative_tests.dart"
 			],
 			"problemMatcher": [
 				"$dart-test"
@@ -36,9 +35,9 @@
 			"command": "dart",
 			"args": [
 				"test",
-				// "-r",
-				// "expanded"
-				".\\test\\mssql_client_large_and_multilang_test.dart",
+				"-r",
+				"expanded"
+				// ".\\test\\mssql_negative_tests.dart"
 			],
 			"problemMatcher": [
 				"$dart-test"
