@@ -43,7 +43,8 @@ rm -rf build-autotools && mkdir build-autotools && cd build-autotools
   --prefix="$OUT_DIR/prefix" \
   --enable-shared \
   --disable-static \
-  --disable-libiconv
+  --disable-libiconv \
+  --enable-msdblib
 
 make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
 make install

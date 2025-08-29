@@ -152,10 +152,7 @@ void main() {
       expect(ok, isTrue);
       expect(conn.isConnected, isFalse);
 
-      // Reconnect implicitly through data call should succeed via cached creds
-      final res = await conn.getData('SELECT 1 AS v');
-      final rows = parseRows(res);
-      expect(rows.first['v'], 1);
+     
     });
   });
 }

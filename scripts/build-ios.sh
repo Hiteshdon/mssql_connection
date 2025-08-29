@@ -67,6 +67,7 @@ build_one() {
       --disable-shared \
       --enable-static \
       --disable-libiconv \
+  --enable-msdblib \
       --disable-apps \
       --disable-server
 

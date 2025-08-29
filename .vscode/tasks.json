@@ -20,9 +20,9 @@
 			"command": "dart",
 			"args": [
 				"test",
-				"-r",
-				"expanded"
-				// ".\\test\\mssql_negative_tests.dart"
+				// "-r",
+				// "expanded"
+				".\\test\\mssql_connection_negative_test.dart"
 			],
 			"problemMatcher": [
 				"$dart-test"
@@ -35,9 +35,9 @@
 			"command": "dart",
 			"args": [
 				"test",
-				"-r",
-				"expanded"
-				// ".\\test\\mssql_negative_tests.dart"
+				// "-r",
+				// "expanded"
+				".\\test\\mssql_connection_negative_test.dart"
 			],
 			"problemMatcher": [
 				"$dart-test"

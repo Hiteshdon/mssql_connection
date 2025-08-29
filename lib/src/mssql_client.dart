@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -51,9 +52,27 @@ class MssqlClient {
     }
     try {
       MssqlLogger.i('connect | op=init | status=start');
+      // Preflight: if server string looks like host:port, try a quick TCP probe
+      final hp = _splitHostPort(server);
+      if (hp != null) {
+        final ok = await _probeTcp(
+          hp.$1,
+          hp.$2,
+          Duration(seconds: loginTimeoutSeconds),
+        );
+        if (!ok) {
+          MssqlLogger.w(
+            'connect | op=probe | host=${hp.$1} | port=${hp.$2} | reachable=false',
+          );
+          return false;
+        }
+        MssqlLogger.i(
+          'connect | op=probe | host=${hp.$1} | port=${hp.$2} | reachable=true',
+        );
+      }
       _db ??= DBLib.load();
       _db!.dbinit();
-      // Install error and message handlers once per process (idempotent in DB-Lib)
+      // Install handlers early so DB-Lib won't use its default fatal handler on errors in dbopen.
       try {
         _db!.dberrhandle(kErrHandlerPtr);
         _db!.dbmsghandle(kMsgHandlerPtr);
@@ -155,6 +174,29 @@ class MssqlClient {
     } catch (e, st) {
       MssqlLogger.e('connect | exception=$e');
       MssqlLogger.w('connect | stacktrace=\n$st');
+      return false;
+    }
+  }
+
+  // Parse a host:port string into (host, port). Returns null if not in that form.
+  (String, int)? _splitHostPort(String s) {
+    final idx = s.lastIndexOf(':');
+    if (idx <= 0 || idx == s.length - 1) return null;
+    final host = s.substring(0, idx);
+    final pStr = s.substring(idx + 1);
+    final port = int.tryParse(pStr);
+    if (port == null) return null;
+    return (host, port);
+  }
+
+  // Attempt a TCP connection to host:port within [timeout].
+  Future<bool> _probeTcp(String host, int port, Duration timeout) async {
+    try {
+      final sock = await Socket.connect(host, port, timeout: timeout);
+      // Immediately dispose; this is a reachability probe only.
+      await sock.close();
+      return true;
+    } catch (_) {
       return false;
     }
   }

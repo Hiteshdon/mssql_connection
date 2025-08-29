@@ -27,21 +27,50 @@ class MssqlConnection {
     required String password,
     int timeoutInSeconds = 15,
   }) async {
-    _ip = ip;
-    _port = port;
+    // Basic input validation to prevent invalid dbopen calls and fail fast.
+    final _ipTrim = ip.trim();
+    final _portTrim = port.trim();
+    final _userTrim = username.trim();
+    final _pwd = password; // allow spaces in password
+    final _timeout = timeoutInSeconds < 0 ? 0 : timeoutInSeconds;
+
+    if (_ipTrim.isEmpty) {
+      MssqlLogger.w('connect(params) | invalid ip (empty)');
+      return false;
+    }
+    if (_portTrim.isEmpty) {
+      MssqlLogger.w('connect(params) | invalid port (empty)');
+      return false;
+    }
+    final portNum = int.tryParse(_portTrim);
+    if (portNum == null || portNum <= 0 || portNum > 65535) {
+      MssqlLogger.w('connect(params) | invalid port (non-numeric or out-of-range): $_portTrim');
+      return false;
+    }
+    if (_userTrim.isEmpty) {
+      MssqlLogger.w('connect(params) | invalid username (empty)');
+      return false;
+    }
+    if (_pwd.isEmpty) {
+      MssqlLogger.w('connect(params) | invalid password (empty)');
+      return false;
+    }
+
+    _ip = _ipTrim;
+    _port = _portTrim;
     _database = databaseName;
-    _username = username;
-    _password = password;
-    _timeoutInSeconds = timeoutInSeconds;
+    _username = _userTrim;
+    _password = _pwd;
+    _timeoutInSeconds = _timeout;
 
     try {
-      final server = '$ip:$port';
+      final server = '$_ipTrim:$_portTrim';
       _client = MssqlClient(
         server: server,
-        username: username,
-        password: password,
+        username: _userTrim,
+        password: _pwd,
       );
-      final ok = await _client!.connect(loginTimeoutSeconds: timeoutInSeconds);
+      final ok = await _client!.connect(loginTimeoutSeconds: _timeout);
       if (!ok) return false;
 
       // Select database for this session.
@@ -106,12 +135,12 @@ class MssqlConnection {
       return false;
     } finally {
       _client = null;
-  // Clear saved params so offline calls do not attempt implicit reconnect
-  _ip = null;
-  _port = null;
-  _database = null;
-  _username = null;
-  _password = null;
+      // Clear saved params so offline calls do not attempt implicit reconnect
+      _ip = null;
+      _port = null;
+      _database = null;
+      _username = null;
+      _password = null;
     }
   }
 

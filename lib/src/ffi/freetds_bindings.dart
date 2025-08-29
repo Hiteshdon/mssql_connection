@@ -647,10 +647,31 @@ int _dartDbErrHandler(
   Pointer<Utf8> dberrstr,
   Pointer<Utf8> oserrstr,
 ) {
+  // Be extremely defensive: message buffers may not be valid UTF-8.
+  String safeFromUtf8(Pointer<Utf8> p) {
+    if (p == nullptr) return '';
+    try {
+      return p.toDartString();
+    } catch (_) {
+      // Fallback: read up to 4KB, stop at NUL, and decode as latin1 to avoid throws.
+      try {
+        final bytes = <int>[];
+        for (int i = 0; i < 4096; i++) {
+          final b = p.cast<Uint8>().elementAt(i).value;
+          if (b == 0) break;
+          bytes.add(b);
+        }
+        return const Latin1Codec(allowInvalid: true).decode(bytes);
+      } catch (_) {
+        return '';
+      }
+    }
+  }
+
   final msg =
       '[severity=$severity dberr=$dberr oserr=$oserr] '
-      '${dberrstr == nullptr ? '' : dberrstr.toDartString()}'
-      '${oserrstr == nullptr ? '' : ' | ${oserrstr.toDartString()}'}';
+      '${safeFromUtf8(dberrstr)}'
+      '${oserrstr == nullptr ? '' : ' | ${safeFromUtf8(oserrstr)}'}';
   _DbLibErrorStore.setLastError(dbproc, msg);
   return 0; // per DB-Lib docs, return value ignored
 }
@@ -665,9 +686,28 @@ int _dartDbMsgHandler(
   Pointer<Utf8> proc,
   int line,
 ) {
+  String safeFromUtf8(Pointer<Utf8> p) {
+    if (p == nullptr) return '';
+    try {
+      return p.toDartString();
+    } catch (_) {
+      try {
+        final bytes = <int>[];
+        for (int i = 0; i < 4096; i++) {
+          final b = p.cast<Uint8>().elementAt(i).value;
+          if (b == 0) break;
+          bytes.add(b);
+        }
+        return const Latin1Codec(allowInvalid: true).decode(bytes);
+      } catch (_) {
+        return '';
+      }
+    }
+  }
+
   final msg =
       '[msgno=$msgno state=$msgstate severity=$severity line=$line] '
-      '${msgtext == nullptr ? '' : msgtext.toDartString()}';
+      '${safeFromUtf8(msgtext)}';
   _DbLibErrorStore.setLastMessage(dbproc, msg);
   return 0;
 }
@@ -798,9 +838,9 @@ dynamic decodeDbValue(int type, Pointer<Uint8> ptr, int len) {
     case SYBNTEXT:
     case SYBNVARCHAR:
       {
-  // NVARCHAR/NTEXT are UTF-16LE; dbdatlen returns the byte length.
-  // Decode exactly [len] bytes as UTF-16LE.
-  final bytes = ptr.asTypedList(len);
+        // NVARCHAR/NTEXT are UTF-16LE; dbdatlen returns the byte length.
+        // Decode exactly [len] bytes as UTF-16LE.
+        final bytes = ptr.asTypedList(len);
         return _utf16leDecode(bytes);
       }
     // For DECIMAL/NUMERIC/DATETIME, you may need proper conversion against TDS metadata.

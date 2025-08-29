@@ -25,7 +25,8 @@ for ABI in $ABIS; do
     -DANDROID_ABI="$ABI" \
     -DANDROID_PLATFORM=21 \
     -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_MSDBLIB=ON
 
   # Work around Android lacking system iconv: force-disable HAVE_ICONV in generated config.h
   # so FreeTDS uses its internal replacements instead of system iconv.

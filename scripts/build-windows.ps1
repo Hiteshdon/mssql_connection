@@ -14,8 +14,8 @@ $bld = Join-Path $out "build"
 New-Item -ItemType Directory -Force -Path $bld | Out-Null
 Push-Location $bld
 
-# Configure with CMake (MSVC)
-cmake $src -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -A x64
+# Configure with CMake (MSVC) and enable MSDBLIB semantics
+cmake $src -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DENABLE_MSDBLIB=ON -A x64
 
 # Build
 cmake --build . --config Release
