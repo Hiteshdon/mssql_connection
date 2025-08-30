@@ -105,7 +105,7 @@ typedef unsigned char     uint8_t;	/* 8-bit int */
 #endif				/* !tds_sysdep_real64_type */
 
 #if !defined(MSDBLIB) && !defined(SYBDBLIB)
-#define SYBDBLIB 1
+#define MSDBLIB 1
 #endif
 #if defined(MSDBLIB) && defined(SYBDBLIB)
 #error MSDBLIB and SYBDBLIB cannot both be defined
