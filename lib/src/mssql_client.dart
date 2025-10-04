@@ -520,7 +520,7 @@ class MssqlClient {
         0,
         stmtBuf.type,
         -1, // maxlen: -1 for non-OUTPUT
-        // datalen: for NVARCHAR pass character count, for VARCHAR pass bytes
+        // datalen: NVARCHAR expects character count; VARCHAR expects bytes
         (stmtBuf.type == SYBNVARCHAR)
             ? (stmtBuf.buf.length >> 1)
             : stmtBuf.buf.length,
@@ -549,7 +549,7 @@ class MssqlClient {
         0,
         paramsBuf.type,
         -1, // maxlen: -1 for non-OUTPUT
-        // datalen: for NVARCHAR pass character count, for VARCHAR pass bytes
+        // datalen: NVARCHAR expects character count; VARCHAR expects bytes
         (paramsBuf.type == SYBNVARCHAR)
             ? (paramsBuf.buf.length >> 1)
             : paramsBuf.buf.length,
