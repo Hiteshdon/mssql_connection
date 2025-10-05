@@ -103,6 +103,7 @@ String query = 'UPDATE your_table SET column_name = "new_value" WHERE condition'
 String result = await mssqlConnection.writeData(query);
 
 // `result` contains details about the operation, e.g., affected rows.
+```
 
 ---
 
