@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>"Page contains no data"</title><link rel="stylesheet" type="text/css" href="userguide.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="FreeTDS User Guide" /><link rel="up" href="troubleshooting.html" title="Chapter 8. Troubleshooting" /><link rel="prev" href="logging.html" title="Logging" /><link rel="next" href="seemtooslow.html" title="Slow connection or data retrieval" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">"Page contains no data"</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="logging.html">Prev</a> </td><th width="60%" align="center">Chapter 8. Troubleshooting</th><td width="20%" align="right"> <a accesskey="n" href="seemtooslow.html">Next</a></td></tr></table><hr /></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="pagenodata"></a>"Page contains no data"</h2></div></div></div><p>Web browsers display this error when the underlying script didn't return any information.  The error could be in any of several places, of which <span class="productname">FreeTDS</span> is one.  To isolate the cause, turn on enough logs to see the query, and execute the query through <span class="application">SQSH</span>.  If that works, the problem lies further up the chain.  If it doesn't, take a look at the <a class="link" href="troubleshooting.html#knownissues" title="Known Issues">known issues</a> section.</p><p><span class="productname">FreeTDS</span> under PHP executing within an <span class="productname">Apache</span> process may abort with a segmentation fault.  The evidence of this is the words "Segmentation Fault" or "Bus Error" in the <span class="productname">Apache</span> error log, and a "Page contains no data" warning displayed by the web browser.  The unexpected termination of the process causes the connection to the client to be closed before any buffered data is sent.</p><p>To diagnose this sort of problem, follow this procedure;</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: opencircle; "><li class="listitem" style="list-style-type: circle"><p>Compile PHP as a CGI binary.</p><p>This should have been a side-effect of your build of PHP, look for an
+					executable called php in the PHP build tree.  If you are using a
+					packaged binary, look for a php-cgi package.</p></li><li class="listitem" style="list-style-type: circle"><p>Make a reproducer.</p><p>Make a PHP script that reliably reproduces the segmentation
+					fault via the web server, but with no arguments.  This is so that you
+					can execute it using the PHP binary, thus excluding the web
+					server as the cause of the problem.</p></li><li class="listitem" style="list-style-type: circle"><p>Reproduce on command line.</p><p>Reproduce the segmentation fault using PHP on the command line, by activating PHP with the script as first argument.  For example;</p><pre class="screen">
+	<code class="prompt">% </code><strong class="userinput"><code>php file.php</code></strong>
+	<code class="prompt">Segmentation fault</code>
+	<code class="prompt">% </code></pre><p>If this doesn't reproduce the segmentation fault, then there is
+					something about the environment that differs, so look for the
+					differences and resolve them.  Check environment variables,
+					assumptions made by the script, the UID you are executing under, and
+					the current working directory.</p></li><li class="listitem" style="list-style-type: circle"><p>Reproduce using GDB.</p><p>Now reproduce the segmentation fault using the debugger, GDB.
+					Instead of aborting to the command line, GDB will stop executing the
+					PHP program at the point of failure.  Use the <span class="command"><strong>bt</strong></span>
+					command to determine the details and context.  This is called a
+					backtrace.</p><pre class="screen">
+	<code class="prompt">% </code><strong class="userinput"><code>gdb php</code></strong>
+	<code class="prompt">gdb&gt; </code><strong class="userinput"><code>run file.php</code></strong>
+	<code class="prompt">gdb&gt; </code><strong class="userinput"><code>bt</code></strong></pre></li><li class="listitem" style="list-style-type: circle"><p>Analyze the backtrace.</p><p>Read the backtrace to determine what the cause of the problem
+					is.  Examine each line, assigning responsibility by component; some
+					code is PHP, some is <span class="productname">FreeTDS</span>, and some may be glibc.  You will need
+					the source code for each component, and software engineering debugging
+					skills.</p><p>If you cannot determine the cause yourself, send the backtrace
+					to the <a class="link" href="webproject.html" title="GitHub project page">project page</a>, along with the
+					PHP script.  It helps to make the script as small as possible, but
+					still fail.  It also helps to report the version numbers of PHP, and
+					<span class="productname">FreeTDS</span>.</p></li></ul></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logging.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="troubleshooting.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="seemtooslow.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Logging </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Slow connection or data retrieval</td></tr></table></div></body></html>

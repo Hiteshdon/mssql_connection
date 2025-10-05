@@ -1,0 +1,33 @@
+digraph "tds_get_data_info"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_get_data_info",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Reads data metadata from wire."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds5_process_result",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga547b2f48659f77a69aa802d861ac827d",tooltip="tds5_process_result() is the TDS 5.0 result set processing routine."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_process_default\l_tokens",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga39453d084f3f780ac4602d4abf2839f7",tooltip="tds_process_default_tokens() is a catch all function that is called to process tokens not known to ot..."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_process_info",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga65a2316369529731732f200c190d05d6",tooltip="tds_process_info() is called for INFO, ERR, or EED tokens and is responsible for calling the CLI's me..."];
+  Node4 -> Node3 [id="edge4_Node000004_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 -> Node5 [id="edge5_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_process_tokens",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00592.html#gabfc9de1d1fe718818caf63a4be4035a6",tooltip="process all streams."];
+  Node3 -> Node35 [id="edge6_Node000003_Node000035",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node35 [id="Node000035",label="tds_process_login_tokens",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga93945b42d45ee28ae1296b35a1c1e9bb",tooltip="tds_process_login_tokens() is called after sending the login packet to the server."];
+  Node3 -> Node5 [id="edge7_Node000003_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node5 [id="edge8_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node36 [id="edge9_Node000001_Node000036",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node36 [id="Node000036",label="tds_process_dyn_result",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga416cf119c1d4a0fca27dc5b50c261358",tooltip="Process results from dynamic."];
+  Node36 -> Node3 [id="edge10_Node000036_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node36 -> Node5 [id="edge11_Node000036_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node37 [id="edge12_Node000001_Node000037",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node37 [id="Node000037",label="tds_process_param_result",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gacb3354443bcefe7a500a500a4904cc05",tooltip="process output parameters of a stored procedure."];
+  Node37 -> Node38 [id="edge13_Node000037_Node000038",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node38 [id="Node000038",label="tds_process_param_result\l_tokens",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga9fdef8228d29cab7fa9098f07fa73fba",tooltip="Process parameters from networks."];
+  Node38 -> Node3 [id="edge14_Node000038_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node38 -> Node5 [id="edge15_Node000038_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node37 -> Node5 [id="edge16_Node000037_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

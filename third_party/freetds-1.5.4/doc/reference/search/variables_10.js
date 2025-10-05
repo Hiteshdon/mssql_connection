@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['tds_0',['tds',['../a01326.html#a182ed346382edef2962aca11c7cabc22',1,'tds_freeze::tds'],['../a01098.html#ad357e33164f46fce2bc70267d71a1959',1,'_hstmt::tds']]],
+  ['tds_5fctx_1',['tds_ctx',['../a00650.html#afb3fb2d591c0f75b9412f8ca77e2629d',1,'dblib_context']]],
+  ['tds_5fctx_5fref_5fcount_2',['tds_ctx_ref_count',['../a00650.html#ad01d901acbc92e8c369e6a6c784d7446',1,'dblib_context']]],
+  ['tds_5fnumeric_5fbytes_5fper_5fprec_3',['tds_numeric_bytes_per_prec',['../a00431.html#a4da9eedb6322f7dfca89d5d89be7b374',1,'numeric.c']]],
+  ['tds_5fstr_5fempty_4',['tds_str_empty',['../a00593.html#ga676fd3c5c489584d09c89d66c7a0af2d',1,'tds_str_empty:&#160;tdsstring.c'],['../a00593.html#ga676fd3c5c489584d09c89d66c7a0af2d',1,'tds_str_empty:&#160;tdsstring.c']]],
+  ['tds_5fversion_5',['tds_version',['../a01218.html#a8f9f756b25fd18916a6080f9c22f835d',1,'tds_login']]],
+  ['tds_5fwrite_5fdump_6',['tds_write_dump',['../a00431.html#a02866a1bf7da5ab66a994217fcceb1b7',1,'log.c']]],
+  ['term_5flen_7',['term_len',['../a00750.html#aae893302d33ee1e9d83c3d85d7390dca',1,'tds_file_stream']]],
+  ['terminator_8',['terminator',['../a00750.html#a463c28a7d862c0a6d7bf3170dd614dc0',1,'tds_file_stream']]],
+  ['time_9',['time',['../a01414.html#a6bb5dcd5b47813b71934546e0c60e035',1,'DBDATETIMEALL::time'],['../a01194.html#afd6a58ec251f2c08a040917ba5a8cd3f',1,'TDS_DATETIMEALL::time']]],
+  ['timezone_10',['timezone',['../a01198.html#a624e21e65d0ae89797b3a7eadc48829f',1,'tdsdaterec']]],
+  ['tm_5fhour_11',['tm_hour',['../a00774.html#a6ece03e77f69035da83d5739e16ef905',1,'tds_time']]],
+  ['tm_5fmday_12',['tm_mday',['../a00774.html#a8dfc26d484c247040f521f20288651f1',1,'tds_time']]],
+  ['tm_5fmin_13',['tm_min',['../a00774.html#ab50f30e05dc6b493d347918ab7ded1e9',1,'tds_time']]],
+  ['tm_5fmon_14',['tm_mon',['../a00774.html#adce28126e9bbd4ef005e3bf181d59745',1,'tds_time']]],
+  ['tm_5fns_15',['tm_ns',['../a00774.html#a386f1cfcabbe3ed86afe72bed75778cf',1,'tds_time']]],
+  ['tm_5fsec_16',['tm_sec',['../a00774.html#adeb5e3f535662c0341d28f8d669cb59b',1,'tds_time']]],
+  ['tm_5fyear_17',['tm_year',['../a00774.html#a3e27d50ebb5196356a6a8a9b495c8758',1,'tds_time']]],
+  ['type_18',['type',['../a01274.html#a889aafdde1d57c9be0585326022831f0',1,'tds_cursor']]]
+];

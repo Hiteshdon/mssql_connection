@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Troubleshooting ODBC connections</title><link rel="stylesheet" type="text/css" href="userguide.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="FreeTDS User Guide" /><link rel="up" href="prepodbc.html" title="Chapter 4. Preparing ODBC" /><link rel="prev" href="odbcombo.html" title="ODBC-combined configuration" /><link rel="next" href="configs.html" title="Chapter 5. Advanced Configurations" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Troubleshooting ODBC connections</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="odbcombo.html">Prev</a> </td><th width="60%" align="center">Chapter 4. Preparing ODBC</th><td width="20%" align="right"> <a accesskey="n" href="configs.html">Next</a></td></tr></table><hr /></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="odbcdiagnose"></a>Troubleshooting ODBC connections</h2></div></div></div><p>Supposing everything compiles and installs without trouble, how do you know if your ODBC setup  works?  Or, if you know it doesn't, what then?</p><p>First, try to connect with <span class="command"><strong>tsql</strong></span>.  If you're intending to use <code class="filename">freetds.conf</code>, exercise it with
+			<span class="command"><strong>tsql -S <em class="replaceable"><code>servername</code></em></strong></span>.  If not, use
+			<span class="command"><strong>TDSVER=auto tsql -H <em class="replaceable"><code>hostname</code></em> -p <em class="replaceable"><code>port</code></em></strong></span></p><p>If <span class="command"><strong>tsql</strong></span> works and <span class="command"><strong>isql</strong></span> doesn't, you've isolated the problem to the ODBC setup.  <span class="productname">FreeTDS</span> might have some interoperability problems, but mere connection to the database isn't one of them!  If <span class="command"><strong>tsql</strong></span>
+			doesn't work, turn on logging with <code class="envar">TDSDUMP</code>.  The log will tell you what TCP/IP name (and address) <span class="productname">FreeTDS</span> is attempting to connect to, and what version of the TDS protocol it's using.</p><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="with.iodbc"></a>With iODBC</h3></div></div></div><p><code class="systemitem">iODBC</code> comes with a sample command line query program called <span class="command"><strong>odbctest</strong></span>, located in the <code class="filename">iodbc/samples</code> directory.
+Using this program you can get a listing of DSNs, connect, and issue queries.
+	</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="../images/tip.gif" /></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>For debugging purposes, you may wish to link a program such as <span class="command"><strong>odbctest</strong></span> directly to <span class="productname">FreeTDS</span> instead of to the driver manager.
+<a href="#ftn.idm69348208" class="footnote" id="idm69348208"><sup class="footnote">[15]</sup></a>
+To do so, compile and install the <code class="systemitem">ODBC</code> driver with <code class="systemitem">iODBC</code> as normal <a href="#ftn.idm69353712" class="footnote" id="idm69353712"><sup class="footnote">[16]</sup></a>, then compile and link the program:
+				
+				</p><div class="example"><a id="e.g.odbctest.nodm"></a><p class="title"><strong>Example 4.7. Compile <code class="filename">odbctest</code> without a driver manager.</strong></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">$ </code><strong class="userinput"><code>make odbctest.o</code></strong>
+	<code class="prompt">$ </code><strong class="userinput"><code>gcc -g -o odbctest odbctest.o /usr/local/freetds/lib/libtdsodbc.a</code></strong></pre></div></div><p><br class="example-break" />
+	
+				Now you can run <span class="command"><strong>gdb</strong></span> or another debugger and set breakpoints on functions in the library without the driver manager getting in the way.</p></td></tr></table></div></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="with.unixODBC"></a>With unixODBC</h3></div></div></div><p>Try <span class="command"><strong>isql -v <em class="replaceable"><code>dsn</code></em> <em class="replaceable"><code>username</code></em> <em class="replaceable"><code>password</code></em></strong></span>, and have a look at the log.  See if the right address and TDS version are being used.  Adjust to taste.</p><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="with.unixODBC.osql"></a>Use <span class="command"><strong>osql</strong></span></h4></div></div></div><p>The <span class="command"><strong>osql</strong></span> utility is a Bourne shell script that checks your ODBC configuration.
+If it approves, it invokes the <code class="systemitem">unixODBC</code> isql utility.
+Cf. <span class="command"><strong>man osql</strong></span> for details on its use.
+					
+					</p><div class="example"><a id="e.g.odbcdiagnose.osql"></a><p class="title"><strong>Example 4.8. Use <span class="command">osql</span> to test the ODBC setup.</strong></p><div class="example-contents"><pre class="screen">
+	<code class="prompt">$ </code><strong class="userinput"><code>osql -S machine -U mr_ed -P hayseed</code></strong>
+	looking for odbc.ini and odbcinst.ini in /usr/local/etc
+	reading "/usr/home/mr_ed/.odbc.ini"
+	[machine] found in "/usr/home/mr_ed/.odbc.ini"
+	found this section:
+	[machine]
+	Database = testdb
+	Servername = machine
+	Trace           = Yes
+	TraceFile       = /tmp/unixodbc.trace
+
+	looking for driver for DSN [machine]
+	no driver mentioned for [machine] in .odbc.ini
+	looking for driver for DSN [default]
+	driver "FreeTDS" found for [default] in .odbc.ini
+	found driver named "FreeTDS"
+	FreeTDS is not a readable file
+	looking for entry named [FreeTDS] in /usr/local/etc/odbcinst.ini
+	driver "/usr/local/lib/libtdsodbc.so" found for [FreeTDS] in odbcinst.ini
+	/usr/local/lib/libtdsodbc.so is a readable file
+	Using ODBC-Combined strategy
+	FreeTDS servername is "machine" (from /usr/home/mr_ed/.odbc.ini)
+	looking for [machine] in /usr/home/mr_ed/.freetds.conf
+	"/usr/home/mr_ed/.freetds.conf" is a readable file
+	found this section:
+	[machine]
+	host = machine.example.com
+	port = 2500
+	tds version = 7.1
+
+	machine.example.com has address 10.82.32.177
+
+	DSN: machine
+	Driver: /usr/local/lib/libtdsodbc.so
+	Server's hostname: machine.example.com
+	Address: 10.82.32.177
+
+	Attempting connection as mr_ed ...
+	+ exec isql machine mr_ed hayseed -v
+	+---------------------------------------+
+	| Connected!                            |
+	|                                       |
+	| sql-statement                         |
+	| help [tablename]                      |
+	| quit                                  |
+	|                                       |
+	+---------------------------------------+
+	SQL&gt;</pre></div></div><p><br class="example-break" /></p><p>The reader is here advised that the <span class="command"><strong>isql</strong></span> that comes with many versions of <code class="systemitem">unixODBC</code> will truncate text and surprise in other ways without warning.
+If it behaves strangely, try <span class="productname">FreeTDS</span>'s <span class="command"><strong>bsqlodbc</strong></span> before you decide you've found a <span class="productname">FreeTDS</span> bug.</p></div></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.idm69348208" class="footnote"><p><a href="#idm69348208" class="para"><sup class="para">[15] </sup></a>Why?  Once the program is started in the debugger, the driver entry points become viable breakpoints.
+Because the DM loads the driver dynamically with <code class="function">dlopen(3)</code>, no driver addresses even <span class="emphasis"><em>exist</em></span> until the runtime linker loads it. </p></div><div id="ftn.idm69353712" class="footnote"><p><a href="#idm69353712" class="para"><sup class="para">[16] </sup></a>When linking directly to <span class="productname">FreeTDS</span> you still need the Driver Manager's header files.</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="odbcombo.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="prepodbc.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="configs.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">ODBC-combined configuration </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 5. Advanced Configurations</td></tr></table></div></body></html>

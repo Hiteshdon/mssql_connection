@@ -1,0 +1,15 @@
+digraph "dbmoretext"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="dbmoretext",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Send chunk of a text/image value to the server."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_writetext_continue",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#ab68dead99a2ebec55895a10cd3db5202",tooltip="Send some data in the writetext request started by tds_writetext_start."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_writetext_end",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00254.html#ac1e460551f1188620ea478238864ac4b",tooltip="Finish sending writetext data."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_flush_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga5feb53554e8917a81bbbc332163a61fb",tooltip="Flush packet to server."];
+}

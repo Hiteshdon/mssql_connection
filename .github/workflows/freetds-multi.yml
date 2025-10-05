@@ -1,0 +1,327 @@
+name: FreeTDS Multi-Platform Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/**'
+      - 'third_party/freetds-1.5.4/**'
+      - '.github/workflows/freetds-multi.yml'
+
+jobs:
+  posix:
+    name: POSIX (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool pkg-config gettext
+
+      - name: Install deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install autoconf automake libtool gettext pkg-config
+          brew link --force gettext
+
+      - name: Build
+        run: |
+          bash scripts/build-posix.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-${{ runner.os }}"
+      - name: Inspect and copy dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/out-${{ runner.os }}/lib"
+          echo "Inspecting Linux deps in $OUT"
+          shopt -s nullglob
+          for f in "$OUT"/*.so; do
+            echo "== $f"
+            readelf -d "$f" | grep NEEDED || true
+            while read -r line; do
+              path="$(echo "$line" | awk '{print $3}')"
+              name="$(basename "$path" 2>/dev/null || true)"
+              if [[ -n "$path" && -f "$path" ]]; then
+                case "$name" in
+                  libcrypto*.so*|libssl*.so*|libgnutls*.so*|libiconv*.so*|libkrb5*.so*|libk5crypto*.so*|libcom_err*.so*|libsasl2*.so*)
+                    dest="$OUT/$(basename "$path")"
+                    if [ "$path" -ef "$dest" ]; then
+                      echo "Already present: $dest"
+                    else
+                      echo "Copying $path"
+                      cp -f "$path" "$OUT/"
+                    fi
+                    ;;
+                esac
+              fi
+            done < <(ldd "$f" | grep '=> /' || true)
+          done
+
+      - name: Inspect and copy dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/out-${{ runner.os }}/lib"
+          echo "Inspecting macOS deps in $OUT"
+          shopt -s nullglob
+          for f in "$OUT"/*.dylib; do
+            echo "== $f"
+            otool -L "$f" || true
+            otool -L "$f" | awk 'NR>1 {print $1}' | while read -r dep; do
+              case "$dep" in
+                /usr/lib/*|/System/*) continue;;
+              esac
+              base="$(basename "$dep")"
+              if [ -f "$dep" ]; then
+                dest="$OUT/$base"
+                if [ "$dep" -ef "$dest" ]; then
+                  echo "Already present: $dest"
+                else
+                  echo "Copying $dep"
+                  cp -f "$dep" "$OUT/"
+                fi
+                continue
+              fi
+              for prefix in /opt/homebrew /usr/local; do
+                found="$(/usr/bin/find "$prefix" -name "$base" -type f -maxdepth 5 2>/dev/null | head -n1)"
+                if [ -n "$found" ]; then
+                  dest="$OUT/$base"
+                  if [ "$found" -ef "$dest" ]; then
+                    echo "Already present: $dest"
+                  else
+                    echo "Copying $found"
+                    cp -f "$found" "$OUT/"
+                  fi
+                  break
+                fi
+              done
+            done
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-${{ runner.os }}
+          path: out-${{ runner.os }}/**/*
+
+  windows:
+    name: Windows (MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake
+        uses: lukka/get-cmake@v3.30.3
+
+      - name: Build with script
+        shell: pwsh
+        run: |
+          pwsh scripts/build-windows.ps1 `
+            "$env:GITHUB_WORKSPACE\third_party\freetds-1.5.4" `
+            "$env:GITHUB_WORKSPACE\out-windows"
+
+      - name: Inspect and copy dependencies (Windows)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bin = "$env:GITHUB_WORKSPACE\out-windows\bin"
+          if (-not (Test-Path $bin)) { New-Item -ItemType Directory -Force -Path $bin | Out-Null }
+
+          # Locate dumpbin.exe via vswhere or PATH
+          $dumpbin = $null
+          $vsw = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vsw) {
+            $dumpbin = & $vsw -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find "VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe" | Select-Object -First 1
+          }
+          if (-not $dumpbin) {
+            $cmd = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+            if ($cmd) { $dumpbin = $cmd.Source }
+          }
+          if (-not $dumpbin) { Write-Host "dumpbin not found; skipping inspection"; exit 0 }
+          Write-Host "Using dumpbin at $dumpbin"
+
+          # Collect dependency DLL names from all built DLLs
+          $depNames = New-Object System.Collections.Generic.HashSet[string]([System.StringComparer]::OrdinalIgnoreCase)
+          Get-ChildItem -Path $bin -Filter *.dll | ForEach-Object {
+            $dll = $_.FullName
+            Write-Host "Inspecting $dll"
+            Write-Host "dumpbin /DEPENDENTS $dll"
+            $lines = & "$dumpbin" /DEPENDENTS $dll 2>$null
+            Write-Host "dumpbin output:"
+            foreach ($line in $lines) { Write-Host "  $line" }
+            $collect = $false
+            foreach ($line in $lines) {
+              if ($line -match 'Image has the following dependencies') { $collect = $true; continue }
+              if ($collect) {
+                $t = $line.Trim()
+                if ($t -match '^Summary') { Write-Host "  -> end of dependencies section"; break }
+                if (-not $t) { continue }
+                if ($t -match '^[A-Za-z0-9_.-]+\.dll$') {
+                  $added = $depNames.Add($t)
+                  if ($added) { Write-Host "  -> dependent: $t" } else { Write-Host "  -> dependent (dup): $t" }
+                } else {
+                  Write-Host "  -> not a DLL dependency line (ignored): $t"
+                }
+              }
+            }
+          }
+
+          if ($depNames.Count -eq 0) { Write-Host "No dependents found across built DLLs." } else { Write-Host ("Collected dependencies (" + $depNames.Count + "): " + ($depNames -join ', ')) }
+
+          # Skip known system DLLs
+          $skip = @(
+            'KERNEL32.dll','USER32.dll','GDI32.dll','ADVAPI32.dll','WS2_32.dll','NTDLL.dll','CRYPT32.dll','BCrypt.dll','secur32.dll','SCHANNEL.dll','RPCRT4.dll','OLE32.dll','COMBASE.dll','SHELL32.dll','SHLWAPI.dll','WLDAP32.dll','IPHLPAPI.DLL','WINHTTP.dll','NORMALIZ.dll','DBGHELP.dll'
+          )
+          # Also skip API-MS CRT shims and VC runtimes (handled by OS image)
+          $toCopy = $depNames | Where-Object { ($skip -notcontains $_) -and ($_ -notmatch '^api-ms-win-.*\.dll$') -and ($_ -notmatch '^vcruntime\d+\.dll$') -and ($_ -notmatch '^msvcp\d+\.dll$') }
+          $skipped = $depNames | Where-Object { $skip -contains $_ }
+          if ($skipped) { Write-Host ("Skipped system DLLs: " + ($skipped -join ', ')) }
+          Write-Host "Dependencies to locate: $($toCopy -join ', ')"
+
+          function Copy-IfFound([string]$name) {
+            $dest = Join-Path $bin $name
+            if (Test-Path $dest) { Write-Host "Already present: $dest"; return }
+            $candidates = @()
+            $candidates += (Join-Path $bin $name)
+            $candidates += (Join-Path "${env:ProgramFiles}\OpenSSL-Win64\bin" $name)
+            $candidates += (Join-Path "${env:ProgramFiles}\OpenSSL\bin" $name)
+            $candidates += (Join-Path "${env:ProgramFiles(x86)}\OpenSSL-Win64\bin" $name)
+            $candidates += (Join-Path "${env:ProgramFiles(x86)}\OpenSSL\bin" $name)
+            $candidates += (Join-Path "${env:WINDIR}\System32" $name)
+            $candidates += (Join-Path "${env:WINDIR}\SysWOW64" $name)
+            $vsRoot = "${env:ProgramFiles}\Microsoft Visual Studio\2022"
+            if (Test-Path $vsRoot) {
+              $found = Get-ChildItem -Path $vsRoot -Recurse -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($found) { $candidates += $found.FullName }
+            }
+            Write-Host ("Candidate search paths for ${name}: " + ($candidates -join '; '))
+            foreach ($src in $candidates) {
+              Write-Host "  checking: $src"
+              if ($src -and (Test-Path $src)) {
+                if ([System.IO.Path]::GetFullPath($src) -eq [System.IO.Path]::GetFullPath($dest)) { Write-Host "Already present: $dest"; return }
+                Copy-Item $src $dest -Force
+                Write-Host "Copied $name from $src"
+                return
+              } else {
+                Write-Host "  not found: $src"
+              }
+            }
+            Write-Host ("Warning: could not locate $name (searched: " + ($candidates -join '; ') + ")")
+          }
+
+          foreach ($name in $toCopy) { Copy-IfFound $name }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-windows
+          path: out-windows/**/*
+
+  android:
+    name: Android (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK and CMake
+        run: |
+          sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1" "platforms;android-34"
+          echo "ANDROID_NDK=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Build (ABI ${{ matrix.abi }})
+        env:
+          ANDROID_NDK: ${{ env.ANDROID_NDK }}
+        run: |
+          bash scripts/build-android.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-android" "${{ matrix.abi }}"
+
+      - name: Inspect and copy dependencies (Android ${{ matrix.abi }})
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/out-android/${{ matrix.abi }}"
+          echo "Inspecting Android deps in $OUT"
+          TOOL="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readobj"
+          shopt -s nullglob
+          for f in "$OUT"/*.so; do
+            echo "== $f"
+            if [ -x "$TOOL" ]; then
+              "$TOOL" --needed-libs "$f" || true
+              deps=$("$TOOL" --needed-libs "$f" 2>/dev/null | tr -d '\r' | sed 's/[][,:]/ /g')
+            else
+              readelf -d "$f" | grep NEEDED || true
+              deps=$(readelf -d "$f" 2>/dev/null | awk -F'[][]' '/NEEDED/{print $2}')
+            fi
+            for dep in $deps; do
+              case "$dep" in
+                libc.so|libm.so|libdl.so|liblog.so|libstdc++.so|libgcc*.so) continue;;
+              esac
+              found="$(/usr/bin/find "$OUT" -name "$dep" -type f -maxdepth 1 2>/dev/null | head -n1)"
+              if [ -z "$found" ]; then
+                found="$(/usr/bin/find "$GITHUB_WORKSPACE/out-android" -name "$dep" -type f -maxdepth 2 2>/dev/null | head -n1)"
+              fi
+              if [ -z "$found" ]; then
+                buildDir="$GITHUB_WORKSPACE/out-android/build-${{ matrix.abi }}"
+                found="$(/usr/bin/find "$buildDir" -name "$dep" -type f -maxdepth 3 2>/dev/null | head -n1)"
+              fi
+              if [ -n "$found" ]; then
+                dest="$OUT/$(basename "$found")"
+                if [ "$found" -ef "$dest" ]; then
+                  echo "Already present: $dest"
+                else
+                  echo "Copying $found"
+                  cp -f "$found" "$OUT/"
+                fi
+              else
+                echo "Warning: could not locate $dep to copy"
+              fi
+            done
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-android-${{ matrix.abi }}
+          path: out-android/${{ matrix.abi }}/**/*
+
+  ios:
+    name: iOS XCFramework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          brew update
+          brew install autoconf automake libtool gettext pkg-config
+          brew link --force gettext
+
+      - name: Build iOS XCFrameworks (DB and CT)
+        run: |
+          bash scripts/build-ios.sh "$GITHUB_WORKSPACE/third_party/freetds-1.5.4" "$GITHUB_WORKSPACE/out-ios"
+
+      - name: Inspect dependencies (iOS)
+        run: |
+          echo "iOS builds static libraries in XCFrameworks; no runtime dylibs to inspect or copy."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: freetds-ios-xcframeworks
+          path: |
+            out-ios/FreeTDS-DB.xcframework
+            out-ios/FreeTDS-CT.xcframework

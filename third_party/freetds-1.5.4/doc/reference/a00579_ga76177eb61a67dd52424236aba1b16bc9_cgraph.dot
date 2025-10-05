@@ -1,0 +1,13 @@
+digraph "dbmny4minus"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="dbmny4minus",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Negate a DBMONEY4 value."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="dbmny4sub",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00579.html#ga856143f4f9c7a5c15fb15633af81487d",tooltip="Subtract two DBMONEY4 values."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="dbmny4zero",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00579.html#ga070e94f72f12c138a16a7bcdf732fa8b",tooltip="Zero a DBMONEY4 value."];
+}

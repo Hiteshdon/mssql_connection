@@ -1,0 +1,44 @@
+digraph "tds7_get_data_info"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds7_get_data_info",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Reads data information from wire."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="adjust_character_column_size",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga91770634ce8c0d6f1fe007b45da186fd",tooltip="Adjust column size according to client's encoding."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="determine_adjusted_size",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#gaacb26868882440aa08de9fb952628eaf",tooltip="Allow for maximum possible size of converted data, while being careful about integer division truncat..."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_iconv_get_info",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00588.html#ga1639ccaa7e17c07457bcb37f313bc52f",tooltip="Get a iconv info structure, allocate and initialize if needed."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_iconv_info_init",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00588.html#ga3a7a7b4d6ed344127e164dd0b443d790",tooltip="Open iconv descriptors to convert between character sets (both directions)."];
+  Node1 -> Node8 [id="edge5_Node000001_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="tds_dstr_cstr",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#gac536f0e4d77d3cff5702719362ec1766",tooltip="Returns a C version (NUL terminated string) of dstr."];
+  Node1 -> Node9 [id="edge6_Node000001_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="tds_dstr_get",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga017c427e9599c031be5c555cb32abe2c",tooltip="Reads a string from wire and put in a DSTR."];
+  Node9 -> Node10 [id="edge7_Node000009_Node000010",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="tds_dstr_alloc",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga6aa14b8b717b51afcfb65bd55143689d",tooltip="allocate space for length char"];
+  Node9 -> Node11 [id="edge8_Node000009_Node000011",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="tds_dstr_buf",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#gae092e53680d954bcf4f19334987d43c7",tooltip="Returns a buffer to edit the string."];
+  Node9 -> Node12 [id="edge9_Node000009_Node000012",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="tds_dstr_setlen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga0cd7863ba7c2d2da4a193234472a3d14",tooltip="limit length of string, MUST be <= current length"];
+  Node9 -> Node13 [id="edge10_Node000009_Node000013",color="steelblue1",style="solid",tooltip=" "];
+  Node13 [id="Node000013",label="tds_get_n",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#gae777dd57e8d1bb40349d7d7d8434fddf",tooltip="Get N bytes from the buffer and return them in the already allocated space   given to us."];
+  Node13 -> Node14 [id="edge11_Node000013_Node000014",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="tds_close_socket",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga3e3f76009fce5ceedb2f42bb2c9aed2e",tooltip="Close current socket."];
+  Node13 -> Node15 [id="edge12_Node000013_Node000015",color="steelblue1",style="solid",tooltip=" "];
+  Node15 [id="Node000015",label="tds_read_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga410619783bdf2bb60b0f27a5578e0e07",tooltip="Read in one 'packet' from the server."];
+  Node15 -> Node14 [id="edge13_Node000015_Node000014",color="steelblue1",style="solid",tooltip=" "];
+  Node9 -> Node16 [id="edge14_Node000009_Node000016",color="steelblue1",style="solid",tooltip=" "];
+  Node16 [id="Node000016",label="tds_get_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga90f080e6e9448feac15dee1370d66802",tooltip="Fetch a string from the wire."];
+  Node16 -> Node17 [id="edge15_Node000016_Node000017",color="steelblue1",style="solid",tooltip=" "];
+  Node17 [id="Node000017",label="read_and_convert",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00591.html#ga676c4dee6522815b16fdc8e448e43590",tooltip="For UTF-8 and similar, tds_iconv() may encounter a partial sequence when the chunk boundary is not al..."];
+  Node16 -> Node13 [id="edge16_Node000016_Node000013",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node25 [id="edge17_Node000001_Node000025",color="steelblue1",style="solid",tooltip=" "];
+  Node25 [id="Node000025",label="tds_get_byte",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga0cb72d3f6943795c39db1fa692be0a58",tooltip="Return a single byte from the input buffer."];
+  Node25 -> Node15 [id="edge18_Node000025_Node000015",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node26 [id="edge19_Node000001_Node000026",color="steelblue1",style="solid",tooltip=" "];
+  Node26 [id="Node000026",label="tds_prtype",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00592.html#ga307f949194204f71f1a7e574424048b1",tooltip="Returns string representation of the given type."];
+}

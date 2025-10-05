@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Appendix A. On Linkers</title><link rel="stylesheet" type="text/css" href="userguide.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="FreeTDS User Guide" /><link rel="up" href="index.html" title="FreeTDS User Guide" /><link rel="prev" href="Contributors.html" title="Contributors" /><link rel="next" href="rtl.define.library.html" title="What is a C library?" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Appendix A. On Linkers</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="Contributors.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="rtl.define.library.html">Next</a></td></tr></table><hr /></div><div class="appendix"><div class="titlepage"><div><div><h1 class="title"><a id="rtl"></a>Appendix A. On Linkers</h1></div></div></div><div class="toc"><p><strong>Table of Contents</strong></p><dl class="toc"><dt><span class="section"><a href="rtl.html#rtl.define.function">What is a C function?</a></span></dt><dt><span class="section"><a href="rtl.define.library.html">What is a C library?</a></span></dt><dd><dl><dt><span class="section"><a href="rtl.define.library.html#rtl.define.library.static">Static libraries</a></span></dt><dt><span class="section"><a href="rtl.define.library.html#rtl.define.library.dynamic">Dynamic libraries</a></span></dt></dl></dd><dt><span class="section"><a href="linker.library.check.html">Checking if a Library Provides a Function</a></span></dt><dt><span class="section"><a href="linker.how.html">How Dost Thy Linker Link? </a></span></dt><dd><dl><dt><span class="section"><a href="linker.how.html#idm71991280">Static Linker</a></span></dt><dt><span class="section"><a href="linker.how.html#linker.dynamic">Dynamic Linker</a></span></dt></dl></dd><dt><span class="section"><a href="linker.conclusion.html">Keep in Mind</a></span></dt></dl></div><div class="abstract"><p class="title"><strong>Abstract</strong></p><p><span class="productname">FreeTDS</span> is a library, obviously, its functions invoked by an application.  How the application finds the library can be mysterious.  In the interest of making <span class="productname">FreeTDS</span> easier to use, this appendix discusses how it all works.   </p><p>This appendix focusses on <span class="emphasis"><em>using</em></span> <span class="productname">FreeTDS</span> in your application.  It isn't intended to help in building <span class="productname">FreeTDS</span>, although the background information it provides might be useful.  </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="rtl.define.function"></a>What is a C function?</h2></div></div></div><p>A C function is a named bit of code.</p><p>A C compiler recognizes function names in source code by parsing the C language.  When it encounters a function name, it looks for a <span class="emphasis"><em>definition</em></span> for the function — i.e. actual code implementing it — in the current file.  If it finds one, it creates machine instructions to push any parameters on the stack, jump to the named address, and clear the stack after the functions returns.  If it doesn't find one, it shrugs<a href="#ftn.idm71907440" class="footnote" id="idm71907440"><sup class="footnote">[33]</sup></a> and adds that name to the list of names to be <em class="firstterm">resolved</em> later.  We'll get to what that means in a minute.   </p><p>The compiler's job ends where the linker's begins.   
+		</p><div class="itemizedlist"><p class="title"><strong>Compiler's job</strong></p><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>Convert source code into object code </p></li><li class="listitem"><p>Put in jumps to defined functions </p></li><li class="listitem"><p>Create a list of defined functions, and their addresses </p></li><li class="listitem"><p>Create a list of undefined functions </p></li></ul></div><p>
+
+The <span class="command"><strong>nm</strong></span> utility displays function names.  Here are the ones defined by <code class="filename">bsqldb.c</code> (in <code class="filename">bsqsldb.o</code>):
+
+</p><pre class="screen"><code class="prompt">$ </code><strong class="userinput"><code>nm bsqldb.o | grep -wi t</code></strong>
+<code class="computeroutput">0000000000000000 T err_handler
+0000000000000270 T get_login
+00000000000001d0 t get_printable_size
+0000000000000940 T main
+00000000000000a0 T msg_handler
+00000000000007d0 t next_query
+00000000000006c0 t set_format_string
+0000000000000080 t usage</code></pre><p>
+
+GNU <span class="command"><strong>nm</strong></span> marks with a lower-case letter functions that are locally defined, not intended to be used outside the file.  The C programmer marked those functions <span class="emphasis"><em>static</em></span>.  Note how closely the source code corresponds to the object code: 
+
+</p><pre class="screen"><code class="prompt">$ </code><strong class="userinput"><code>grep ^static src/bsqldb.c</code></strong>
+<code class="computeroutput">static int next_query(DBPROCESS *dbproc);
+static void print_results(DBPROCESS *dbproc);
+static int get_printable_size(int type, int size);
+static void usage(const char invoked_as[]);
+static int set_format_string(struct METADATA * meta, const char separator[]);
+</code></pre><p>
+
+(Order doesn't matter.  It's a set, not a list.)  
+    </p><p>Here are some functions used, but not defined, by <code class="filename">bsqldb.o</code>:
+
+<a id="bsqldb.unresolved"></a></p><pre class="screen"><code class="prompt">$ </code><strong class="userinput"><code>nm bsqldb.o | grep -w U | head</code></strong>
+<code class="computeroutput">                 U __assert_fail
+                 U __ctype_b_loc
+                 U __errno_location
+                 U __strdup
+                 U __xpg_basename
+                 U asprintf
+                 U calloc
+                 U dbaltbind
+                 U dbaltcolid
+                 U dbaltlen</code></pre><p>
+
+Two things to note.  First, the functions defined by <code class="filename">bsqldb.o</code> have addresses, and undefined functions don't.  Second, <span class="emphasis"><em>only the name</em></span> identifies the function.  It's been that way since about 1978, and it's one reason C libraries are so useful: to find a function, the tool need only <em class="firstterm">resolve the name</em>, i.e. convert the name into an address.  The caller (the programmer, really) has to know the function's inputs and semantics (how it behaves), but the tool's job is bone simple.  Which turns out to be quite handy.        
+	</p></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.idm71907440" class="footnote"><p><a href="#idm71907440" class="para"><sup class="para">[33] </sup></a>You have to watch carefully.  Modern compilers shrug quickly.  </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="Contributors.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="rtl.define.library.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Contributors </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> What is a C library?</td></tr></table></div></body></html>

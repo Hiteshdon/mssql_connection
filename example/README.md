@@ -1,6 +1,6 @@
-# mssql_connection_example
+# example
 
-Demonstrates how to use the mssql_connection plugin.
+A new Flutter project.
 
 ## Getting Started
 

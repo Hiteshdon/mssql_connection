@@ -1,0 +1,21 @@
+digraph "tds7_build_bulk_insert_stmt"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds7_build_bulk_insert_stmt",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Help to build query to be sent to server."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_dstr_cstr",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#gac536f0e4d77d3cff5702719362ec1766",tooltip="Returns a C version (NUL terminated string) of dstr."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_dstr_len",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00593.html#ga396f139e4f886ac1b224a735138e73dd",tooltip="Returns the length of the string in bytes."];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_get_column_declaration",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga50d62edeb2a432e2dc668263f3f958ff",tooltip="Return declaration for column (like \"varchar(20)\")."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="tds_fix_column_size",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga79e31bdb1d8e8e214ea2bed964ff0e77",tooltip="Get column size for wire."];
+  Node1 -> Node6 [id="edge5_Node000001_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_quote_id",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga8d8f2f1c91635ee95f30722208ae3043",tooltip="Quote an id."];
+  Node6 -> Node7 [id="edge6_Node000006_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_quote",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gaa4cb9266a930adc1f1e0f607f7d6edb5",tooltip="Quote a string properly."];
+}

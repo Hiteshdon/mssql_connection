@@ -1,0 +1,22 @@
+digraph "_bcp_free_columns"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="_bcp_free_columns",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="_bcp_free_storage",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00578.html#gaa134c1c3ccc4326e693adb8357272f1d",tooltip=" "];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="bcp_done",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00577.html#ga8b85f79f53a62ac7a728fe626d609b65",tooltip="Conclude the transfer of data from program variables."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="bcp_exec",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00577.html#ga7a184158b27a50f713e9cfae3b746209",tooltip="Write a datafile to a table."];
+  Node2 -> Node5 [id="edge4_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="bcp_init",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00577.html#gada8e987c4a6225b9276c05ba3a4f47a0",tooltip="Prepare for bulk copy operation on a table."];
+  Node1 -> Node6 [id="edge5_Node000001_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="bcp_columns",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00577.html#ga330b9f1028f856a9eec5115550bcb4f7",tooltip="Indicate how many columns are to be found in the datafile."];
+  Node6 -> Node7 [id="edge6_Node000006_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="bcp_readfmt",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00577.html#ga963c5e38bca7668afc57f5cc123d10fb",tooltip="Read a format definition file."];
+  Node1 -> Node7 [id="edge7_Node000001_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

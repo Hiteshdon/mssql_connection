@@ -1,0 +1,13 @@
+digraph "dbprtype"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="dbprtype",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Print a token value's name to a buffer."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="bcp_bind",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00577.html#ga6cf03708baaf02eb016b9ee77160d879",tooltip="Bind a program host variable to a database column."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="dbprrow",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gaa30be3414a97aac6139af2e928db91ca",tooltip="Print a result set to stdout."];
+}

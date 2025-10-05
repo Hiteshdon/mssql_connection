@@ -1,0 +1,5 @@
+# Ensure tests run serially to avoid FFI callback across isolates
+# See error: "Cannot invoke native callback from a different isolate."
+concurrency: 1
+platforms:
+  - vm

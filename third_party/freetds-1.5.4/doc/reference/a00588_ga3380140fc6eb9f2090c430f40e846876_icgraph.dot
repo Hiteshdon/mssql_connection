@@ -1,0 +1,39 @@
+digraph "skip_one_input_sequence"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="skip_one_input_sequence",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Move the input sequence pointer to the next valid position."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_iconv",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00588.html#ga87db49044919f1bc84c0ff5e9ab00304",tooltip="Wrapper around iconv(3)."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="odbc_set_string_flag",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00584.html#gadba4490bf3183799a70c9e2f44fab331",tooltip="Copy a string to client setting size according to ODBC convenction."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_convert_stream",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#a9d8eb43a81ff58ab423dce0ce95b9564",tooltip="Reads and writes from a stream converting characters."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="read_and_convert",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00591.html#ga676c4dee6522815b16fdc8e448e43590",tooltip="For UTF-8 and similar, tds_iconv() may encounter a partial sequence when the chunk boundary is not al..."];
+  Node4 -> Node63 [id="edge5_Node000004_Node000063",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node63 [id="Node000063",label="tds_bcp_fread",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00254.html#a86ac92bd8a3c61a413d27150ec9bc202",tooltip="Read a data file, passing the data through iconv()."];
+  Node4 -> Node65 [id="edge6_Node000004_Node000065",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node65 [id="Node000065",label="tds_put_string",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00591.html#ga1fcaf8d488cc1390f106ce3ad0bf37b4",tooltip="Output a string to wire automatic translate string to unicode if needed."];
+  Node65 -> Node61 [id="edge7_Node000065_Node000061",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node61 [id="Node000061",label="tds_generic_put",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00263.html#a84e17808683ba2dd956e811a42e23176",tooltip="Write data to wire."];
+  Node65 -> Node71 [id="edge8_Node000065_Node000071",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node71 [id="Node000071",label="tds_submit_execdirect",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gae603aed795a4c5bb26ab159a11256996",tooltip="Submit a prepared query with parameters."];
+  Node65 -> Node72 [id="edge9_Node000065_Node000072",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node72 [id="Node000072",label="tds_submit_prepare",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga74eb08c3a1c85be8ac9db428842c8b9d",tooltip="Creates a temporary stored procedure in the server."];
+  Node65 -> Node73 [id="edge10_Node000065_Node000073",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node73 [id="Node000073",label="tds_submit_query_params",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga95e0fccedc459a4404f496eec74a369a",tooltip="Sends a language string to the database server for processing."];
+  Node2 -> Node91 [id="edge11_Node000002_Node000091",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node91 [id="Node000091",label="tds_convert_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gad5b76c688898b86984d09628f030d01c",tooltip="Convert a string in an allocated buffer."];
+  Node91 -> Node70 [id="edge12_Node000091_Node000070",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node70 [id="Node000070",label="tds71_submit_prepexec",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga08877c101704bebe4fa57e0849dc272d",tooltip="Creates a temporary stored procedure in the server and execute it."];
+  Node91 -> Node92 [id="edge13_Node000091_Node000092",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node92 [id="Node000092",label="tds7_bcp_send_colmetadata",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00254.html#a4daaa551e54dbd978650e2eef89e09ff",tooltip="Send BCP metadata to server."];
+  Node91 -> Node61 [id="edge14_Node000091_Node000061",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node91 -> Node71 [id="edge15_Node000091_Node000071",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node91 -> Node72 [id="edge16_Node000091_Node000072",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node91 -> Node73 [id="edge17_Node000091_Node000073",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

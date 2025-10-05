@@ -1,0 +1,21 @@
+digraph "tds_quote_and_put"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_quote_and_put",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Send a string to server while quoting it."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_put_param_as_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga0e2e7230c425e925402d7856ff5b4b18",tooltip="Send a parameter to server."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds4_send_emulated_rpc",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga2d0a06c1a30dd2470dc7a788de21b080",tooltip="Send RPC as string query."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_submit_rpc",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga5f071b94ad7889690762dc85646c74ab",tooltip="Calls a RPC from server."];
+  Node2 -> Node6 [id="edge4_Node000002_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="tds_send_emulated_execute",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga02c6ce3ff96369603a6ee4efee64caae",tooltip="Emulate prepared execute traslating to a normal language."];
+  Node6 -> Node7 [id="edge5_Node000006_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_submit_execdirect",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gae603aed795a4c5bb26ab159a11256996",tooltip="Submit a prepared query with parameters."];
+  Node6 -> Node8 [id="edge6_Node000006_Node000008",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="tds_submit_execute",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga3e7b4793c6f799fbc6c174f673bb5b32",tooltip="Sends a previously prepared dynamic statement to the server."];
+}

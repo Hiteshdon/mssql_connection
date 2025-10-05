@@ -1,0 +1,44 @@
+digraph "tds_cursor"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_cursor",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Holds information about a cursor."];
+  Node1 -> Node1 [id="edge1_Node000001_Node000001",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" next",fontcolor="grey" ];
+  Node2 -> Node1 [id="edge2_Node000001_Node000002",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" status",fontcolor="grey" ];
+  Node2 [id="Node000002",label="tds_cursor_status",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a01270.html",tooltip=" "];
+  Node3 -> Node1 [id="edge3_Node000001_Node000003",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" res_info",fontcolor="grey" ];
+  Node3 [id="Node000003",label="tds_result_info",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$a01258.html",tooltip="Hold information for any results."];
+  Node4 -> Node3 [id="edge4_Node000003_Node000004",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" columns",fontcolor="grey" ];
+  Node4 [id="Node000004",label="tds_column",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$a01250.html",tooltip="Metadata about columns in regular and compute rows."];
+  Node5 -> Node4 [id="edge5_Node000004_Node000005",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" funcs",fontcolor="grey" ];
+  Node5 [id="Node000005",label="tds_column_funcs",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a01246.html",tooltip=" "];
+  Node6 -> Node4 [id="edge6_Node000004_Node000006",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" char_conv",fontcolor="grey" ];
+  Node6 [id="Node000006",label="tdsiconvinfo",height=0.2,width=0.4,color="orangered", fillcolor="white", style="filled",URL="$a01050.html",tooltip=" "];
+  Node10 -> Node4 [id="edge7_Node000004_Node000010",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" column_name\ntable_column_name\ntable_name",fontcolor="grey" ];
+  Node10 [id="Node000010",label="tds_dstr",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$a01374.html",tooltip="Structure to hold a string."];
+  Node11 -> Node4 [id="edge8_Node000004_Node000011",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" bcp_column_data",fontcolor="grey" ];
+  Node11 [id="Node000011",label="tds_bcpcoldata",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a01242.html",tooltip=" "];
+  Node12 -> Node3 [id="edge9_Node000003_Node000012",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" attached_to",fontcolor="grey" ];
+  Node12 [id="Node000012",label="tds_socket",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$a01310.html",tooltip="Information for a server connection."];
+  Node13 -> Node12 [id="edge10_Node000012_Node000013",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" conn",fontcolor="grey" ];
+  Node13 [id="Node000013",label="tds_connection",height=0.2,width=0.4,color="orangered", fillcolor="white", style="filled",URL="$a01306.html",tooltip=" "];
+  Node1 -> Node13 [id="edge11_Node000013_Node000001",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" cursors",fontcolor="grey" ];
+  Node18 -> Node13 [id="edge12_Node000013_Node000018",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" dyns",fontcolor="grey" ];
+  Node18 [id="Node000018",label="tds_dynamic",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$a01282.html",tooltip="Holds information for a dynamic (also called prepared) query."];
+  Node18 -> Node18 [id="edge13_Node000018_Node000018",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" next",fontcolor="grey" ];
+  Node3 -> Node18 [id="edge14_Node000018_Node000003",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" params\nres_info",fontcolor="grey" ];
+  Node6 -> Node13 [id="edge15_Node000013_Node000006",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" char_convs",fontcolor="grey" ];
+  Node21 -> Node13 [id="edge16_Node000013_Node000021",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" packet_cache",fontcolor="grey" ];
+  Node21 [id="Node000021",label="tds_packet",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",URL="$a01298.html",tooltip=" "];
+  Node21 -> Node21 [id="edge17_Node000021_Node000021",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" next",fontcolor="grey" ];
+  Node21 -> Node12 [id="edge18_Node000012_Node000021",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" frozen_packets\nrecv_packet\nsend_packet",fontcolor="grey" ];
+  Node3 -> Node12 [id="edge19_Node000012_Node000003",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" comp_info\ncurrent_results\nparam_info\nres_info",fontcolor="grey" ];
+  Node1 -> Node12 [id="edge20_Node000012_Node000001",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" cur_cursor",fontcolor="grey" ];
+  Node18 -> Node12 [id="edge21_Node000012_Node000018",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" cur_dyn",fontcolor="grey" ];
+  Node23 -> Node12 [id="edge22_Node000012_Node000023",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" login",fontcolor="grey" ];
+  Node23 [id="Node000023",label="tds_login",height=0.2,width=0.4,color="orangered", fillcolor="white", style="filled",URL="$a01218.html",tooltip=" "];
+  Node10 -> Node23 [id="edge23_Node000023_Node000010",dir="back",color="darkorchid3",style="dashed",tooltip=" ",label=" app_name\ncafile\ncertificate_host\l_name\nclient_charset\nclient_host_name\ncrlfile\ndatabase\ndb_filename\ninstance_name\nlanguage\n...",fontcolor="grey" ];
+}

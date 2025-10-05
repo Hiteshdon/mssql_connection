@@ -1,0 +1,13 @@
+digraph "tds_send_cancel"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_send_cancel",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="tds_send_cancel() sends an empty packet (8 byte header only) tds_process_cancel should be called dire..."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="dbcancel",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga5ea23272124fff03b8d87538c1ec3ee5",tooltip="Cancel the current command batch."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tdserror",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01485.html#abf18b98efef6ce2dc0b97d658a3a1918",tooltip="Call the client library's error handler (for library-generated errors only)"];
+}

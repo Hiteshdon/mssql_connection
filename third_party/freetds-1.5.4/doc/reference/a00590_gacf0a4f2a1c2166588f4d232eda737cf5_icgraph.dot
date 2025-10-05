@@ -1,0 +1,21 @@
+digraph "tds_skip_comment"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="tds_skip_comment",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Skip a comment in a query."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_next_placeholder",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga8f3b00c34af2484eccb169e60a37dc36",tooltip="Get position of next placeholder."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds5_fix_dot_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga8853354723094c8efcd87fabf675c64f",tooltip="Substitute ?-style placeholders with named (@param) ones."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_submit_query_params",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga95e0fccedc459a4404f496eec74a369a",tooltip="Sends a language string to the database server for processing."];
+  Node2 -> Node26 [id="edge4_Node000002_Node000026",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node26 [id="Node000026",label="tds_count_placeholders",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gaaa7b4d37bf796019e72f25c6e7fe7bea",tooltip="Count the number of placeholders ('?') in a query."];
+  Node26 -> Node27 [id="edge5_Node000026_Node000027",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node27 [id="Node000027",label="tds_send_emulated_execute",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00590.html#ga02c6ce3ff96369603a6ee4efee64caae",tooltip="Emulate prepared execute traslating to a normal language."];
+  Node2 -> Node27 [id="edge6_Node000002_Node000027",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node4 [id="edge7_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

@@ -1,0 +1,56 @@
+digraph "dbcolptr"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="dbcolptr",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Sanity checks for column-oriented functions."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="dbcolinfo",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00089.html#a9b73fd1afa2c3ccfca481635212d2e43",tooltip="Get a bunch of column attributes with a single call (Microsoft-compatibility feature)."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="dbcollen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga89fc5589b4bf41932324d2cfc6ad6433",tooltip="Get size of a regular result column."];
+  Node3 -> Node2 [id="edge3_Node000003_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 -> Node4 [id="edge4_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="dbpivot",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00086.html#af8ada101cd189eff87b3533cbeaaa23b",tooltip="Pivot the rows, creating a new resultset."];
+  Node1 -> Node5 [id="edge5_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="dbcolname",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga3bcdc8f584537b8278483f2cee59f130",tooltip="Return name of a regular result column."];
+  Node5 -> Node2 [id="edge6_Node000005_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 -> Node4 [id="edge7_Node000005_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node6 [id="edge8_Node000001_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="dbcolsource",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga7be8b405d5416bf0361f65dbb5942faa",tooltip="Get base database column name for a result set column."];
+  Node1 -> Node7 [id="edge9_Node000001_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="dbcoltype",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga636e6f1b64743f3cf22158a56eef371f",tooltip="Get the datatype of a regular result set column."];
+  Node7 -> Node2 [id="edge10_Node000007_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 -> Node4 [id="edge11_Node000007_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node8 [id="edge12_Node000001_Node000008",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="dbcoltypeinfo",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga0b5ca7723f370dac9fe1f6db35e331a0",tooltip="Get precision and scale information for a regular result column."];
+  Node8 -> Node2 [id="edge13_Node000008_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node9 [id="edge14_Node000001_Node000009",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="dbcolutype",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gab33d2f4fd44f50e55b6c71902db4fdae",tooltip="Get user-defined datatype of a regular result column."];
+  Node9 -> Node2 [id="edge15_Node000009_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node10 [id="edge16_Node000001_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="dbdata",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga1137a30014c6ebb6d6e9836581a09cff",tooltip="Get address of data in a regular result column."];
+  Node10 -> Node11 [id="edge17_Node000010_Node000011",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="dbprrow",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gaa30be3414a97aac6139af2e928db91ca",tooltip="Print a result set to stdout."];
+  Node10 -> Node12 [id="edge18_Node000010_Node000012",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="dbspr1row",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gaf641c8e3d34607ca8b7ac2afed3e6d67",tooltip="Print a regular result row to a buffer."];
+  Node1 -> Node13 [id="edge19_Node000001_Node000013",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node13 [id="Node000013",label="dbdatlen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gae666d141533126babb0235af21bdca0f",tooltip="Get size of current row's data in a regular result column."];
+  Node13 -> Node11 [id="edge20_Node000013_Node000011",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node13 -> Node12 [id="edge21_Node000013_Node000012",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node14 [id="edge22_Node000001_Node000014",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="dbnullbind",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga85dcc40c3615f94be96b09b2ec043533",tooltip="Tie a null-indicator to a regular result column."];
+  Node14 -> Node4 [id="edge23_Node000014_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node15 [id="edge24_Node000001_Node000015",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node15 [id="Node000015",label="dbprcollen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gac0cb0584f6500d61a2ac95a891da73eb",tooltip="Get size of a result column needed to print column."];
+  Node1 -> Node16 [id="edge25_Node000001_Node000016",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node16 [id="Node000016",label="dbtablecolinfo",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga9804fc70ae6ed35c92cd75d410dad570",tooltip="describe table column attributes with a single call (Freetds-only API function modelled on dbcolinfo)"];
+  Node1 -> Node17 [id="edge26_Node000001_Node000017",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node17 [id="Node000017",label="dbtxptr",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#gadbda59e71ba33aae755c41c14c988976",tooltip="Get text pointer for a column in the current row."];
+  Node1 -> Node18 [id="edge27_Node000001_Node000018",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node18 [id="Node000018",label="dbtxtimestamp",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga24edbab5017b2a14c46b2cea8cc015d4",tooltip="Get text timestamp for a column in the current row."];
+  Node1 -> Node19 [id="edge28_Node000001_Node000019",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node19 [id="Node000019",label="dbvarylen",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00575.html#ga57c856964a9a0b4cc43f5192647c51e7",tooltip="Determine whether a column can vary in size."];
+  Node19 -> Node2 [id="edge29_Node000019_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

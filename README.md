@@ -2,18 +2,18 @@
 
 The `mssql_connection` plugin allows Flutter applications to seamlessly connect to and interact with Microsoft SQL Server databases, offering rich functionality for querying and data manipulation.
 
-🚀 Now supports **Windows** along with Android for cross-platform development. Easily customize your database operations, ensure secure connections, and simplify app development with `mssql_connection`. 🔗
+🚀 Now powered by Dart FFI + FreeTDS with support for Windows, Android, iOS, macOS, and Linux. Simplify SQL Server access with a small, consistent API. 🔗
 
 ---
 
 ## Features
 
-- 🔄 **Cross-Platform Support**: Seamless Microsoft SQL Server integration for Android and Windows.
-- 📊 **Query Execution**: Execute SQL queries and retrieve data effortlessly in JSON format.
-- ⏳ **Configurable Timeouts**: Set connection timeouts for secure and reliable operations.
-- 🧩 **Simplified API**: Developer-friendly API for Flutter apps.
-- 🔄 **Automatic Reconnection**: Robust connection handling during interruptions.
-- 🚀 **Effortless Data Writing**: Perform insert, update, and delete operations with transaction support.
+- 🔄 **Cross-Platform (FFI + FreeTDS)**: Windows, Android, iOS, macOS, Linux.
+- 📊 **Unified JSON**: `{ columns: [...], rows: [...], affected: N }` for reads/writes.
+- 🔒 **Parameterized Queries**: Call with `getDataWithParams`/`writeDataWithParams` to reduce injection risk.
+- 🔧 **Transactions**: `beginTransaction`, `commit`, `rollback`.
+- � **Bulk Insert**: High-throughput inserts using FreeTDS BCP.
+- ⏳ **Timeouts + Reconnect**: Login timeout and auto-reconnect on demand.
 
 ---
 
@@ -26,10 +26,10 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
 
    ```yaml
    dependencies:
-     mssql_connection: ^2.0.0
+     mssql_connection: ^3.0.0
    ```
 
-   Replace `^2.0.0` with the latest version.
+   Replace `^3.0.0` with the latest version.
 
 2. **Install Packages**:
    Run the following command to fetch the plugin:
@@ -103,6 +103,50 @@ String query = 'UPDATE your_table SET column_name = "new_value" WHERE condition'
 String result = await mssqlConnection.writeData(query);
 
 // `result` contains details about the operation, e.g., affected rows.
+
+---
+
+### Parameterized queries
+
+Avoid manual string concatenation and let the library pass parameters safely via `sp_executesql`:
+
+```dart
+final res = await mssqlConnection.getDataWithParams(
+  'SELECT * FROM Users WHERE Name LIKE @name AND IsActive = @active',
+  {
+    'name': '%john%',
+    'active': true,
+  },
+);
+```
+
+---
+
+### Transactions
+
+```dart
+await mssqlConnection.beginTransaction();
+try {
+  await mssqlConnection.writeData('UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 1');
+  await mssqlConnection.writeData('UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 2');
+  await mssqlConnection.commit();
+} catch (_) {
+  await mssqlConnection.rollback();
+  rethrow;
+}
+```
+
+---
+
+### Bulk insertion
+
+```dart
+final rows = [
+  {'Id': 1, 'Name': 'Alice'},
+  {'Id': 2, 'Name': 'Bob'},
+];
+final inserted = await mssqlConnection.bulkInsert('dbo.Users', rows, batchSize: 1000);
+```
 ```
 
 ---
@@ -119,23 +163,11 @@ bool isDisconnected = await mssqlConnection.disconnect();
 
 ---
 
-## 🔄 Version 2.0.2 Updates
+## 🔄 Version 3.0.0 Highlights
 
-### ✅ Android
-
-Here's a clearer and more helpful version of that line for your changelog or README:
-
-* ✅ Added a `proguard-rules.pro` file under `example/android/app/` to prevent *R8: Missing class* issues during APK builds.
-> 🔧 If you encounter similar R8-related errors in your own project when using this plugin, you can [download this file](https://github.com/Hiteshdon/mssql_connection/blob/main/example/android/app/proguard-rules.pro) and place it in your project at `android/app/`.
-
-* ✅ Improved JSON serialization support for special SQL types:
-
-  * `Types.BINARY`, `VARBINARY`, `LONGVARBINARY`
-  * `CLOB`, `ARRAY`, `STRUCT`, `DISTINCT`, `REF`, `JAVA_OBJECT`
-
-### 🪟 Windows
-
-* 🛠️ Fixed `INK : fatal error LNK1104` issue during Windows builds for smoother native compilation.
+- Cross-platform via Dart FFI + FreeTDS (Windows/Android/iOS/macOS/Linux).
+- Unified JSON response for reads/writes.
+- Parameterized queries, transactions, and bulk insertion.
 
 ---
 
@@ -155,13 +187,13 @@ VALUES ('example.txt', CAST('This is some binary data' AS VARBINARY(MAX)));
 **Flutter Output:**
 
 ```json
-[
-  {
-    "Id": 1,
-    "FileName": "example.txt",
-    "Data": "VGhpcyBpcyBzb21lIGJpbmFyeSBkYXRh"
-  }
-]
+{
+  "columns": ["Id", "FileName", "Data"],
+  "rows": [
+    {"Id": 1, "FileName": "example.txt", "Data": "VGhpcyBpcyBzb21lIGJpbmFyeSBkYXRh"}
+  ],
+  "affected": 0
+}
 ```
 
 ### 📥 Decoding in Flutter

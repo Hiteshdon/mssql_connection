@@ -1,0 +1,38 @@
+digraph "tds_submit_unprepare"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="tds_submit_unprepare",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Send a unprepare request for a prepared query."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="tds_put_string",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga1fcaf8d488cc1390f106ce3ad0bf37b4",tooltip="Output a string to wire automatic translate string to unicode if needed."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="tds_convert_stream",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#a9d8eb43a81ff58ab423dce0ce95b9564",tooltip="Reads and writes from a stream converting characters."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="tds_iconv",height=0.2,width=0.4,color="red", fillcolor="#FFF0F0", style="filled",URL="$a00588.html#ga87db49044919f1bc84c0ff5e9ab00304",tooltip="Wrapper around iconv(3)."];
+  Node2 -> Node7 [id="edge4_Node000002_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="tds_dataout_stream_init",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#aa038a9125979f8f0915dbd53cbf27e5a",tooltip="Initialize a data output stream."];
+  Node7 -> Node8 [id="edge5_Node000007_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="tds_dataout_stream\l_write",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#ae38a590ee08cf398e7adef536ac94538",tooltip="Writes data to network for output stream."];
+  Node2 -> Node9 [id="edge6_Node000002_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="tds_staticin_stream_init",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#aa9e1e45f0305622dd6aed9f8fe158581",tooltip="Initialize an input stream for read from a static allocated buffer."];
+  Node9 -> Node10 [id="edge7_Node000009_Node000010",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="tds_staticin_stream_read",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a01479.html#a76b02f1fa5b79dc7e1ef2651a9afe3f7",tooltip="Reads data from a static allocated buffer."];
+  Node1 -> Node11 [id="edge8_Node000001_Node000011",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="tds_query_flush_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gada27f4cfce925240ad33b71b63ca692d",tooltip="Flush query packet."];
+  Node11 -> Node12 [id="edge9_Node000011_Node000012",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="tds_flush_packet",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga5feb53554e8917a81bbbc332163a61fb",tooltip="Flush packet to server."];
+  Node1 -> Node13 [id="edge10_Node000001_Node000013",color="steelblue1",style="solid",tooltip=" "];
+  Node13 [id="Node000013",label="tds_set_cur_dyn",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#gae8b7db85af16701fc0604eb117cbd4e4",tooltip="Set current dynamic."];
+  Node1 -> Node14 [id="edge11_Node000001_Node000014",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="tds_start_query",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga0da385231bfa3dc49377e1fb2bea2c07",tooltip="Start query packet of a given type."];
+  Node14 -> Node15 [id="edge12_Node000014_Node000015",color="steelblue1",style="solid",tooltip=" "];
+  Node15 [id="Node000015",label="tds_start_query_head",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00590.html#ga9ad2e6defce530a8778791cce0166ccd",tooltip="Start query packet of a given type."];
+  Node15 -> Node16 [id="edge13_Node000015_Node000016",color="steelblue1",style="solid",tooltip=" "];
+  Node16 [id="Node000016",label="tds_freeze_close_len",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga2660b893ae2bf36fe1b63b354e748bad",tooltip="Stop keeping data for this specific freeze."];
+  Node15 -> Node17 [id="edge14_Node000015_Node000017",color="steelblue1",style="solid",tooltip=" "];
+  Node17 [id="Node000017",label="tds_freeze_written",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$a00591.html#ga528cc96da09c11bc2930daae64e33e83",tooltip="Compute how many bytes has been written from freeze."];
+  Node15 -> Node2 [id="edge15_Node000015_Node000002",color="steelblue1",style="solid",tooltip=" "];
+}

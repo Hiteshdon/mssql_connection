@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.0.0]
+
+### Added
+- Cross-platform support via Dart FFI + FreeTDS for Windows, Android, iOS, macOS, and Linux.
+- Transaction helpers: `beginTransaction`, `commit`, `rollback`.
+- Bulk insertion API using FreeTDS BCP for high-throughput inserts.
+- Parameterized queries (via `sp_executesql`) to reduce SQL injection risk.
+
+### Changed
+- Unified JSON response shape for all operations: `{ "columns": [...], "rows": [...], "affected": N }`.
+- Replaced platform-specific method channels/ODBC paths with a single FFI pipeline for consistent behavior.
+
+### Fixed
+- More robust Unicode/large text handling and consistent Base64 encoding for binary columns.
+
+### Breaking
+- `getData`/`writeData` return a unified JSON object instead of an array-only payload. Update parsers accordingly.
+
 ## [2.0.2]
 
 ### Changed
@@ -69,3 +87,4 @@ All notable changes to this project will be documented in this file.
 - Configurable timeout settings for managing database connection response times.
 
 [2.0.2]: https://github.com/Hiteshdon/mssql_connection.git
+[3.0.0]: https://github.com/Hiteshdon/mssql_connection.git
