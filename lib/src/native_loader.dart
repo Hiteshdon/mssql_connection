@@ -16,17 +16,24 @@ class NativeLoader {
       NativeLogger.i('iOS: using DynamicLibrary.process()');
       return DynamicLibrary.process();
     } else if (Platform.isMacOS) {
-      // Expect the dylib to be available on the system or bundled appropriately.
-      // Try common names in order.
+      // Try bare names first, then Homebrew paths for Apple Silicon and Intel.
+      // On Apple Silicon, Homebrew installs to /opt/homebrew/lib.
+      // On Intel Macs, Homebrew installs to /usr/local/lib.
+      // dlopen with bare names does not search these directories by default.
       NativeLogger.i('macOS: trying common sybdb dylib names');
-      for (final name in ['libsybdb.dylib', 'libsybdb.5.dylib']) {
+      final names = ['libsybdb.dylib', 'libsybdb.5.dylib'];
+      final paths = <String>[...names];
+      for (final dir in ['/opt/homebrew/lib', '/usr/local/lib']) {
+        for (final n in names) paths.add('$dir/$n');
+      }
+      for (final p in paths) {
         try {
-          NativeLogger.i('macOS: trying $name');
-          final lib = DynamicLibrary.open(name);
-          NativeLogger.i('macOS: opened $name');
+          NativeLogger.i('macOS: trying $p');
+          final lib = DynamicLibrary.open(p);
+          NativeLogger.i('macOS: opened $p');
           return lib;
         } catch (e) {
-          NativeLogger.w('macOS: failed $name -> $e');
+          NativeLogger.w('macOS: failed $p -> $e');
         }
       }
     } else if (Platform.isLinux) {
@@ -166,14 +173,20 @@ class NativeLoader {
       NativeLogger.i('iOS: using DynamicLibrary.process()');
       return DynamicLibrary.process();
     } else if (Platform.isMacOS) {
-      for (final name in ['libct.dylib', 'libct.4.dylib']) {
+      // Try bare names first, then Homebrew paths for Apple Silicon and Intel.
+      final names = ['libct.dylib', 'libct.4.dylib'];
+      final paths = <String>[...names];
+      for (final dir in ['/opt/homebrew/lib', '/usr/local/lib']) {
+        for (final n in names) paths.add('$dir/$n');
+      }
+      for (final p in paths) {
         try {
-          NativeLogger.i('macOS: trying $name');
-          final lib = DynamicLibrary.open(name);
-          NativeLogger.i('macOS: opened $name');
+          NativeLogger.i('macOS: trying $p');
+          final lib = DynamicLibrary.open(p);
+          NativeLogger.i('macOS: opened $p');
           return lib;
         } catch (e) {
-          NativeLogger.w('macOS: failed $name -> $e');
+          NativeLogger.w('macOS: failed $p -> $e');
         }
       }
     } else if (Platform.isLinux) {
