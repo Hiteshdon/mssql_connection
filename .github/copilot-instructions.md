@@ -2,7 +2,7 @@
 
 ## Repository purpose
 - This is a Flutter/Dart plugin that connects to Microsoft SQL Server through Dart FFI and FreeTDS.
-- The public package entrypoint is `/home/runner/work/mssql_connection/mssql_connection/lib/mssql_connection.dart`.
+- The public package entrypoint is `lib/mssql_connection.dart`.
 - The main high-level API is the singleton `MssqlConnection` in `lib/src/mssql_connection.dart`; the low-level FreeTDS wrapper is `MssqlClient` in `lib/src/mssql_client.dart`.
 
 ## Important architecture
