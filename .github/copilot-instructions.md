@@ -44,6 +44,6 @@
 - When touching native loading or cross-platform behavior, inspect the workflow and script files as well as `native_loader.dart`.
 - Update `README.md` if user-facing behavior or setup steps change.
 
-## Errors encountered during onboarding
-- In this onboarding environment, `dart pub get` could not be executed because `dart` was not installed in the sandbox (`dart: command not found`).
-- Work-around used for this onboarding task: infer commands, structure, and requirements from `pubspec.yaml`, `README.md`, `dart_test.yaml`, source files, tests, and the GitHub workflow instead of runtime validation.
+## Onboarding validation caveat
+- If the agent sandbox does not have the Dart SDK installed, Dart commands may fail with `dart: command not found`.
+- In that case, use static inspection of `pubspec.yaml`, `README.md`, `dart_test.yaml`, tests, source files, and GitHub workflows to understand the repository first, then run `dart analyze` / `dart test` once a Dart-capable environment is available.
