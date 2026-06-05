@@ -14,7 +14,7 @@ String _uniqueDbName([String prefix = 'Test']) {
 Future<void> runWithClientAndTempDb(
   Future<void> Function(MssqlConnection client, String dbName) body,
 ) async {
-  final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.10:1433';
+  final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.4:1433';
   final username = Platform.environment['MSSQL_USER'] ?? 'sa';
   final password =
       Platform.environment['MSSQL_PASS'] ??
@@ -81,7 +81,7 @@ class TempDbHarness {
   late final String dbName;
 
   Future<void> init() async {
-    final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.10:1433';
+    final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.4:1433';
     final username = Platform.environment['MSSQL_USER'] ?? 'sa';
     final password =
         Platform.environment['MSSQL_PASS'] ??
@@ -124,8 +124,32 @@ class TempDbHarness {
   Future<String> executeParams(String sql, Map<String, dynamic> params) =>
       client.executeParams(sql, params);
 
+  /// Re-establish the connection if it has been lost (e.g. after a DBPROCESS
+  /// died during a long-running batch). Switches back to the temp DB on success.
+  Future<void> ensureConnected() async {
+    if (client.isConnected) return;
+    final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.4:1433';
+    final username = Platform.environment['MSSQL_USER'] ?? 'sa';
+    final password =
+        Platform.environment['MSSQL_PASS'] ??
+        Platform.environment['MSSQL_PASSWORD'] ??
+        'eSeal@123';
+    final parts = server.split(':');
+    final ip = parts.isNotEmpty ? parts.first : '127.0.0.1';
+    final port = parts.length > 1 ? parts[1] : '1433';
+    final ok = await client.connect(
+      ip: ip,
+      port: port,
+      databaseName: dbName,
+      username: username,
+      password: password,
+    );
+    if (!ok) throw StateError('TempDbHarness: failed to reconnect to $server');
+  }
+
   /// Drops the table if it exists and recreates it using the provided CREATE TABLE statement.
   Future<void> recreateTable(String createTableSql) async {
+    await ensureConnected();
     // Attempt to extract table name from CREATE TABLE statement to drop it first.
     // Expect pattern like: CREATE TABLE [schema.]Name ( ... )
     final match = RegExp(

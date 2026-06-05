@@ -74,10 +74,20 @@ bool isConnected = await mssqlConnection.connect(
   username: 'your_username',
   password: 'your_password',
   timeoutInSeconds: 15,
+  // Optional TLS / TDS settings (v3.1.0+):
+  encrypt: false,               // true = require TLS, false = disable, null = default
+  trustServerCertificate: true, // skip cert hostname check (local dev)
+  tdsVersion: '7.4',            // recommended for SQL Server 2012+
 );
 
 // `isConnected` returns true if the connection is established.
 ```
+
+**Hosted providers** (Azure, SmartASP, Site4Now) often require `encrypt: true` or `trustServerCertificate: true`. **Local SQL Server** without a trusted certificate usually needs `encrypt: false` and/or `trustServerCertificate: true`.
+
+**Named instances** (`SERVER\INSTANCE`) are not resolved automatically — use the instance's **static TCP port** (e.g. `ip:49242`) or configure `freetds.conf`.
+
+**Web** is not supported (FFI + native FreeTDS cannot run in Flutter Web).
 
 ---
 

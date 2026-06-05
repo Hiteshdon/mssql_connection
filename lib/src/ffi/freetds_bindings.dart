@@ -98,12 +98,31 @@ const int SYBTIME = 51; // (sybase) time
 // BCP direction
 const int DB_IN = 1;
 // Login option selector (subset)
+const int DBSETHOST = 1; // server host name on LOGINREC (via dbsetlname)
 const int DBSETBCP = 6; // enable BCP on LOGINREC
+const int DBSETPACKET = 11; // TDS packet size on LOGINREC (via dbsetllong)
+// DBSETENCRYPTION (FreeTDS ext) — used with dbsetlname() to set encryption mode.
+// Accepted string values: 'off', 'request', 'require', 'strict'.
+const int DBSETENCRYPTION = 1005;
+const int DBSETPORT = 1006; // TCP port on LOGINREC (via dbsetlshort)
+// DBVERSION constants for dbsetlversion() — TDS protocol version selectors.
+const int DBVERSION_70 = 4; // TDS 7.0  (SQL Server 7.0)
+const int DBVERSION_71 = 5; // TDS 7.1  (SQL Server 2000)
+const int DBVERSION_72 = 6; // TDS 7.2  (SQL Server 2005)
+const int DBVERSION_73 = 7; // TDS 7.3  (SQL Server 2008)
+const int DBVERSION_74 = 8; // TDS 7.4  (SQL Server 2012+)
 // dbsetopt option IDs (subset)
 const int DBTEXTSIZE = 17; // set text size for large text retrieval
 // Per sybdb.h, DBSETUSER and DBSETPWD constants used with dbsetlname()
 const int DBSETUSER = 2;
 const int DBSETPWD = 3;
+
+// dbbind variable types (sybdb.h)
+const int CHARBIND = 0; // Bind column as char[]
+const int NTBSTRINGBIND = 2; // Bind column as null-terminated string
+const int INTBIND = 8; // Bind column as int
+const int FLT8BIND = 9; // Bind column as double
+const int BIGINTBIND = 30; // Bind column as bigint
 
 // RPC options (per sybdb.h)
 // DBRPCRECOMPILE causes the stored procedure to be recompiled before executing.
@@ -202,9 +221,19 @@ typedef _dbuseC = Int32 Function(Pointer<DBPROCESS>, Pointer<Utf8>);
 typedef _dbuseDart = int Function(Pointer<DBPROCESS>, Pointer<Utf8>);
 
 // Group: LOGINREC options (e.g., enable BCP using DBSETBCP)
-/// C: int dbsetlbool(LOGINREC*, int option, int value) — Toggle login options
+/// C: int dbsetlbool(LOGINREC*, int value, int which) — Toggle login boolean options
 typedef _dbsetlboolC = Int32 Function(Pointer<LOGINREC>, Int32, Int32);
 typedef _dbsetlboolDart = int Function(Pointer<LOGINREC>, int, int);
+
+/// C: RETCODE dbsetlshort(LOGINREC*, int value, int which) — Set short login options.
+/// Use with which=DBSETPORT to bind a TCP port on LOGINREC.
+typedef _dbsetlshortC = Int32 Function(Pointer<LOGINREC>, Int32, Int32);
+typedef _dbsetlshortDart = int Function(Pointer<LOGINREC>, int, int);
+
+/// C: RETCODE dbsetlversion(LOGINREC* login, BYTE version) — Set TDS protocol version.
+/// Use DBVERSION_70..DBVERSION_74 constants for [version].
+typedef _dbsetlversionC = Int32 Function(Pointer<LOGINREC>, Uint8);
+typedef _dbsetlversionDart = int Function(Pointer<LOGINREC>, int);
 
 /// C: int dbsetopt(DBPROCESS*, int option, const char* char_param, int int_param)
 typedef _dbsetoptC =
@@ -381,6 +410,45 @@ typedef _dbconvertDart =
       int,
     );
 
+// Group: Login long-value setter (packet size, etc.)
+/// C: RETCODE dbsetllong(LOGINREC* login, long value, int which)
+/// Use with which=DBSETPACKET for TDS packet size.
+typedef _dbsetllongC = Int32 Function(Pointer<LOGINREC>, Int64, Int32);
+typedef _dbsetllongDart = int Function(Pointer<LOGINREC>, int, int);
+
+// Group: Cancel operations
+/// C: RETCODE dbcancel(DBPROCESS*) — Cancel current command batch
+typedef _dbcancelC = Int32 Function(Pointer<DBPROCESS>);
+typedef _dbcancelDart = int Function(Pointer<DBPROCESS>);
+
+/// C: RETCODE dbcanquery(DBPROCESS*) — Cancel current query results only
+typedef _dbcanqueryC = Int32 Function(Pointer<DBPROCESS>);
+typedef _dbcanqueryDart = int Function(Pointer<DBPROCESS>);
+
+/// C: void dbfreebuf(DBPROCESS*) — Free row buffers to release memory
+typedef _dbfreebufC = Void Function(Pointer<DBPROCESS>);
+typedef _dbfreebufDart = void Function(Pointer<DBPROCESS>);
+
+// Group: Column binding (high-perf row reads)
+/// C: RETCODE dbbind(DBPROCESS*, int column, int vartype, DBINT varlen, BYTE* varaddr)
+typedef _dbbindC =
+    Int32 Function(Pointer<DBPROCESS>, Int32, Int32, Int32, Pointer<Uint8>);
+typedef _dbbindDart =
+    int Function(Pointer<DBPROCESS>, int, int, int, Pointer<Uint8>);
+
+/// C: RETCODE dbnullbind(DBPROCESS*, int column, DBINT* indicator)
+typedef _dbnullbindC =
+    Int32 Function(Pointer<DBPROCESS>, Int32, Pointer<Int32>);
+typedef _dbnullbindDart = int Function(Pointer<DBPROCESS>, int, Pointer<Int32>);
+
+/// C: DBINT dbcollen(DBPROCESS*, int column) — Max length of column data
+typedef _dbcollenC = Int32 Function(Pointer<DBPROCESS>, Int32);
+typedef _dbcollenDart = int Function(Pointer<DBPROCESS>, int);
+
+/// C: RETCODE dbrows(DBPROCESS*) — Check if result set has rows
+typedef _dbrowsC = Int32 Function(Pointer<DBPROCESS>);
+typedef _dbrowsDart = int Function(Pointer<DBPROCESS>);
+
 // Loader of symbols from libsybdb
 class DBLib {
   /*
@@ -437,6 +505,8 @@ class DBLib {
   late final _dbsettimeDart dbsettime;
   late final _dbuseDart dbuse;
   late final _dbsetlboolDart dbsetlbool;
+  late final _dbsetlshortDart dbsetlshort;
+  late final _dbsetlversionDart dbsetlversion;
   late final _dbsetoptDart dbsetopt;
 
   late final _dbrpcinitDart dbrpcinit;
@@ -454,6 +524,15 @@ class DBLib {
   late final _bcp_collenDart bcp_collen;
   late final _bcp_colptrDart bcp_colptr;
   late final _dbconvertDart dbconvert;
+
+  late final _dbsetllongDart dbsetllong;
+  late final _dbcancelDart dbcancel;
+  late final _dbcanqueryDart dbcanquery;
+  late final _dbfreebufDart dbfreebuf;
+  late final _dbbindDart dbbind;
+  late final _dbnullbindDart dbnullbind;
+  late final _dbcollenDart dbcollen;
+  late final _dbrowsDart dbrows;
 
   DBLib(this._lib) {
     // Lookups: Connection lifecycle (init/login/open/close)
@@ -520,6 +599,9 @@ class DBLib {
     dbsetlbool = _lib.lookupFunction<_dbsetlboolC, _dbsetlboolDart>(
       'dbsetlbool',
     ); // Toggle login options (e.g., BCP)
+    dbsetlshort = _lib.lookupFunction<_dbsetlshortC, _dbsetlshortDart>(
+      'dbsetlshort',
+    ); // Set short values on LOGINREC (e.g., TCP port)
     dbsetopt = _lib.lookupFunction<_dbsetoptC, _dbsetoptDart>(
       'dbsetopt',
     ); // Set session options (e.g., DBTEXTSIZE)
@@ -573,6 +655,41 @@ class DBLib {
     dbconvert = _lib.lookupFunction<_dbconvertC, _dbconvertDart>(
       'dbconvert',
     ); // Convert values (fallback)
+
+    // Lookups: Login long-value setter (packet size)
+    dbsetllong = _lib.lookupFunction<_dbsetllongC, _dbsetllongDart>(
+      'dbsetllong',
+    ); // Set long values on LOGINREC (e.g., packet size)
+
+    // Lookups: Cancel operations
+    dbcancel = _lib.lookupFunction<_dbcancelC, _dbcancelDart>(
+      'dbcancel',
+    ); // Cancel current command
+    dbcanquery = _lib.lookupFunction<_dbcanqueryC, _dbcanqueryDart>(
+      'dbcanquery',
+    ); // Cancel current query results
+    dbfreebuf = _lib.lookupFunction<_dbfreebufC, _dbfreebufDart>(
+      'dbfreebuf',
+    ); // Free row buffers
+
+    // Lookups: Column binding for high-perf row reads
+    dbbind = _lib.lookupFunction<_dbbindC, _dbbindDart>(
+      'dbbind',
+    ); // Bind column to program variable
+    dbnullbind = _lib.lookupFunction<_dbnullbindC, _dbnullbindDart>(
+      'dbnullbind',
+    ); // Bind null indicator
+    dbcollen = _lib.lookupFunction<_dbcollenC, _dbcollenDart>(
+      'dbcollen',
+    ); // Max column data length
+    dbrows = _lib.lookupFunction<_dbrowsC, _dbrowsDart>(
+      'dbrows',
+    ); // Check if result set has rows
+
+    // Lookup: TDS version setter on LOGINREC
+    dbsetlversion = _lib.lookupFunction<_dbsetlversionC, _dbsetlversionDart>(
+      'dbsetlversion',
+    ); // Set TDS protocol version (DBVERSION_70..DBVERSION_74)
   }
 
   /// Set the username on a LOGINREC using the DBSETUSER selector.
@@ -634,7 +751,8 @@ class _DbLibErrorStore {
 
   static void setLastMessage(Pointer<DBPROCESS>? dbproc, String msg) {
     final k = dbproc == null || dbproc == nullptr ? 0 : dbproc.address;
-    _lastMessage[k] = msg;
+    final prev = _lastMessage[k];
+    _lastMessage[k] = prev == null ? msg : '$prev\n$msg';
   }
 }
 
@@ -686,6 +804,11 @@ int _dartDbMsgHandler(
   Pointer<Utf8> proc,
   int line,
 ) {
+  // Severity 0 messages are purely informational (e.g. "Changed database
+  // context", msgno=5701/5703). Do NOT store them as errors — they would leak
+  // into subsequent executeParams/execute calls and trigger false exceptions.
+  if (severity <= 0) return 0;
+
   String safeFromUtf8(Pointer<Utf8> p) {
     if (p == nullptr) return '';
     try {

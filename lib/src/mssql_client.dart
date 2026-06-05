@@ -16,6 +16,41 @@ class MssqlClient {
   final String username;
   final String password;
 
+  static final Map<String, String> _trustServerCertificateConfigCache =
+      <String, String>{};
+
+  /// When non-null, overrides the TDS protocol version used for this
+  /// connection. Accepted values: `'7.0'`, `'7.1'`, `'7.2'`, `'7.3'`, `'7.4'`.
+  /// Most modern hosted SQL Servers require `'7.4'` (SQL Server 2012+).
+  /// If null, the FreeTDS compiled-in default is used.
+  final String? tdsVersion;
+
+  /// Controls TLS encryption negotiation with the server.
+  ///
+  /// - `true`  → require TLS (`DBSETENCRYPTION = 'require'`). Use when the
+  ///   server mandates encryption (e.g., Azure, SmartASP, Site4Now).
+  /// - `false` → disable TLS (`DBSETENCRYPTION = 'off'`).
+  /// - `null`  → use the FreeTDS default (usually off unless freetds.conf says
+  ///   otherwise).
+  final bool? encrypt;
+
+  /// When `true`, FreeTDS will not verify the server's SSL/TLS certificate
+  /// hostname or certificate chain for this connection.
+  ///
+  /// This is implemented by pointing the process-wide `FREETDSCONF`
+  /// environment variable at a cached override config during `dbopen()`. That
+  /// override clears any inherited `ca file` / `crl file` settings and sets
+  /// `check certificate hostname = no` for the target server while preserving
+  /// the target host/port mapping so FreeTDS will accept any server
+  /// certificate.
+  ///
+  /// Use this only when you explicitly trust the server endpoint and need to
+  /// bypass TLS certificate validation.
+  ///
+  /// To avoid cross-connect races, all `dbopen()` calls are serialized through
+  /// a package-level lock while this environment override is active.
+  final bool trustServerCertificate;
+
   DBLib? _db;
   Pointer<DBPROCESS>? _dbproc;
   bool _connected = false;
@@ -24,6 +59,9 @@ class MssqlClient {
     required this.server,
     required this.username,
     required this.password,
+    this.tdsVersion,
+    this.encrypt,
+    this.trustServerCertificate = false,
   });
 
   bool get isConnected => _connected;
@@ -116,9 +154,29 @@ class MssqlClient {
           return false;
         }
 
+        if (hp != null) {
+          final hostPtr = hp.$1.toNativeUtf8();
+          try {
+            final rcHost = _db!.dbsetlname(login, hostPtr, DBSETHOST);
+            MssqlLogger.i(
+              'connect | op=dbsetlname | option=DBSETHOST | value=${hp.$1} | rc=$rcHost',
+            );
+            final rcPort = _db!.dbsetlshort(login, hp.$2, DBSETPORT);
+            MssqlLogger.i(
+              'connect | op=dbsetlshort | option=DBSETPORT | value=${hp.$2} | rc=$rcPort',
+            );
+          } catch (e) {
+            MssqlLogger.w(
+              'connect | op=server-endpoint | host=${hp.$1} | port=${hp.$2} | error=$e',
+            );
+          } finally {
+            malloc.free(hostPtr);
+          }
+        }
+
         // Enable BCP on this login so that bulk insert APIs are available on the session.
         try {
-          final rcBcp = _db!.dbsetlbool(login, DBSETBCP, 1);
+          final rcBcp = _db!.dbsetlbool(login, 1, DBSETBCP);
           MssqlLogger.i(
             'connect | op=dbsetlbool | option=DBSETBCP | value=1 | rc=$rcBcp',
           );
@@ -127,6 +185,62 @@ class MssqlClient {
             'connect | op=dbsetlbool | option=DBSETBCP | value=1 | error=$e',
           );
         }
+
+        // Set TDS packet size to 4096 bytes for improved network throughput.
+        // Default is often 512 bytes which causes excessive round-trips for large data.
+        // SQL Server supports up to 32767; 4096 is a safe, high-throughput default.
+        try {
+          final rcPkt = _db!.dbsetllong(login, 4096, DBSETPACKET);
+          MssqlLogger.i(
+            'connect | op=dbsetllong | option=DBSETPACKET | value=4096 | rc=$rcPkt',
+          );
+        } catch (e) {
+          MssqlLogger.w(
+            'connect | op=dbsetllong | option=DBSETPACKET | value=4096 | error=$e',
+          );
+        }
+
+        // TDS protocol version (e.g. '7.4' for SQL Server 2012+).
+        // Most hosted providers require 7.1 or higher; 7.4 is ideal modern default.
+        if (tdsVersion != null) {
+          final ver = _parseTdsVersion(tdsVersion!);
+          if (ver != null) {
+            try {
+              final rcVer = _db!.dbsetlversion(login, ver);
+              MssqlLogger.i(
+                'connect | op=dbsetlversion | version=$tdsVersion | rc=$rcVer',
+              );
+            } catch (e) {
+              MssqlLogger.w(
+                'connect | op=dbsetlversion | version=$tdsVersion | error=$e',
+              );
+            }
+          } else {
+            MssqlLogger.w(
+              'connect | op=dbsetlversion | version=$tdsVersion | error=unknown_version (use 7.0/7.1/7.2/7.3/7.4)',
+            );
+          }
+        }
+
+        // Encryption mode via DBSETENCRYPTION (FreeTDS ext, via dbsetlname).
+        // Note: DBSETENCRYPT (12) is unimplemented in FreeTDS dbsetlbool; use
+        // DBSETENCRYPTION (1005) with dbsetlname instead.
+        if (encrypt != null) {
+          final encMode = encrypt! ? 'require' : 'off';
+          final encPtr = encMode.toNativeUtf8();
+          try {
+            final rcEnc = _db!.dbsetlname(login, encPtr, DBSETENCRYPTION);
+            MssqlLogger.i(
+              'connect | op=dbsetlname | option=DBSETENCRYPTION | value=$encMode | rc=$rcEnc',
+            );
+          } catch (e) {
+            MssqlLogger.w(
+              'connect | op=dbsetlname | option=DBSETENCRYPTION | value=$encMode | error=$e',
+            );
+          } finally {
+            malloc.free(encPtr);
+          }
+        }
       } finally {
         malloc.free(u);
         malloc.free(p);
@@ -134,8 +248,41 @@ class MssqlClient {
 
       final srv = server.toNativeUtf8();
       try {
-        MssqlLogger.i('connect | op=dbopen | server=$server');
-        _dbproc = _db!.dbopen(login, srv);
+        await _withDbOpenEnvironmentLock(() async {
+          // trustServerCertificate: point FREETDSCONF at a cached override
+          // config that disables hostname verification while preserving any
+          // caller-supplied FREETDSCONF content.
+          String? prevFreetdsConf;
+          if (trustServerCertificate) {
+            try {
+              prevFreetdsConf = _nativeGetEnv('FREETDSCONF');
+              final overrideConf = _trustServerCertificateConfigPath(
+                prevFreetdsConf,
+                server,
+              );
+              _nativeSetEnv('FREETDSCONF', overrideConf);
+              MssqlLogger.i(
+                'connect | op=trustServerCertificate | config=$overrideConf',
+              );
+            } catch (e) {
+              MssqlLogger.w('connect | op=trustServerCertificate | error=$e');
+            }
+          }
+          try {
+            MssqlLogger.i('connect | op=dbopen | server=$server');
+            _dbproc = _db!.dbopen(login, srv);
+          } finally {
+            if (trustServerCertificate) {
+              try {
+                _nativeSetEnv('FREETDSCONF', prevFreetdsConf);
+              } catch (e) {
+                MssqlLogger.w(
+                  'connect | op=trustServerCertificate | cleanup-error=$e',
+                );
+              }
+            }
+          }
+        });
       } finally {
         malloc.free(srv);
       }
@@ -175,6 +322,164 @@ class MssqlClient {
       MssqlLogger.e('connect | exception=$e');
       MssqlLogger.w('connect | stacktrace=\n$st');
       return false;
+    }
+  }
+
+  /// Map a user-supplied TDS version string to the FreeTDS DBVERSION constant.
+  /// Returns null for unrecognised values so callers can warn appropriately.
+  static int? _parseTdsVersion(String v) {
+    switch (v.trim()) {
+      case '7.0':
+        return DBVERSION_70;
+      case '7.1':
+        return DBVERSION_71;
+      case '7.2':
+        return DBVERSION_72;
+      case '7.3':
+        return DBVERSION_73;
+      case '7.4':
+        return DBVERSION_74;
+      default:
+        return null;
+    }
+  }
+
+  static String _trustServerCertificateConfigPath(
+    String? baseConfigPath,
+    String server,
+  ) {
+    final baseKey = (baseConfigPath ?? '').trim();
+    final cacheKey = '$baseKey\n$server';
+    final cached = _trustServerCertificateConfigCache[cacheKey];
+    if (cached != null && File(cached).existsSync()) {
+      return cached;
+    }
+
+    var inheritedContent = '';
+    if (baseKey.isNotEmpty) {
+      try {
+        final baseFile = File(baseKey);
+        if (baseFile.existsSync()) {
+          inheritedContent = baseFile.readAsStringSync();
+        }
+      } catch (e) {
+        MssqlLogger.w(
+          'trustServerCertificate | base-config-read-failed | path=$baseKey | error=$e',
+        );
+      }
+    }
+
+    final buffer = StringBuffer();
+    if (inheritedContent.isNotEmpty) {
+      buffer.write(inheritedContent);
+      if (!inheritedContent.endsWith('\n')) {
+        buffer.writeln();
+      }
+    }
+    buffer.writeln('[global]');
+    buffer.writeln('ca file =');
+    buffer.writeln('crl file =');
+    buffer.writeln('check certificate hostname = no');
+
+    final serverTarget = _trustServerCertificateHostPort(server);
+    for (final sectionName in _trustServerCertificateSectionNames(server)) {
+      buffer.writeln();
+      buffer.writeln('[$sectionName]');
+      buffer.writeln('host = ${serverTarget.$1}');
+      if (serverTarget.$2 != null) {
+        buffer.writeln('port = ${serverTarget.$2}');
+      }
+      buffer.writeln('ca file =');
+      buffer.writeln('crl file =');
+      buffer.writeln('check certificate hostname = no');
+    }
+
+    final path =
+        '${Directory.systemTemp.path}${Platform.pathSeparator}'
+        'mssql_connection_trust_cert_${cacheKey.hashCode.abs()}.conf';
+    File(path).writeAsStringSync(buffer.toString());
+    _trustServerCertificateConfigCache[cacheKey] = path;
+    return path;
+  }
+
+  static List<String> _trustServerCertificateSectionNames(String server) {
+    final names = <String>[];
+    final target = _trustServerCertificateHostPort(server);
+
+    void add(String value) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return;
+      if (trimmed.contains('[') || trimmed.contains(']')) return;
+      if (trimmed.contains('\r') || trimmed.contains('\n')) return;
+      if (!names.contains(trimmed)) {
+        names.add(trimmed);
+      }
+    }
+
+    add(server);
+    if (target.$2 != null) {
+      add(target.$1);
+    }
+
+    return names;
+  }
+
+  static (String, int?) _trustServerCertificateHostPort(String server) {
+    final trimmed = server.trim();
+    final idx = trimmed.lastIndexOf(':');
+    if (idx > 0 && idx < trimmed.length - 1) {
+      final port = int.tryParse(trimmed.substring(idx + 1));
+      if (port != null) {
+        return (trimmed.substring(0, idx), port);
+      }
+    }
+    return (trimmed, null);
+  }
+
+  static Future<T> _withDbOpenEnvironmentLock<T>(
+    Future<T> Function() action,
+  ) async {
+    final lockPath =
+        '${Directory.systemTemp.path}${Platform.pathSeparator}'
+        'mssql_connection_dbopen.lock';
+    RandomAccessFile? raf;
+    try {
+      raf = await File(lockPath).open(mode: FileMode.append);
+      await raf.lock(FileLock.blockingExclusive);
+      return await action();
+    } catch (e) {
+      MssqlLogger.w('dbopen-lock | unavailable | error=$e');
+      return await action();
+    } finally {
+      if (raf != null) {
+        try {
+          await raf.unlock();
+        } catch (_) {}
+        await raf.close();
+      }
+    }
+  }
+
+  static String? _nativeGetEnv(String name) {
+    try {
+      return _NativeProcessEnv.get(name);
+    } catch (e) {
+      MssqlLogger.w('_nativeGetEnv | name=$name | error=$e');
+      return Platform.environment[name];
+    }
+  }
+
+  /// Set (or unset when [value] is null) a process environment variable using
+  /// the native OS API so that FreeTDS's `getenv()` calls (which happen inside
+  /// `dbopen()` → `tds_read_config_info()`) see the updated value.
+  ///
+  /// Dart's [Platform.environment] is a snapshot taken at process start and
+  /// cannot be written, so we call the C runtime directly via FFI.
+  static void _nativeSetEnv(String name, String? value) {
+    try {
+      _NativeProcessEnv.set(name, value);
+    } catch (e) {
+      MssqlLogger.w('_nativeSetEnv | name=$name | error=$e');
     }
   }
 
@@ -770,9 +1075,9 @@ class MssqlClient {
       name.startsWith('@') ? name : '@$name';
 
   static String _inferSqlType(dynamic v) {
-    // For NULL values, avoid sql_variant which cannot implicitly convert to many types.
-    // Use NVARCHAR(MAX) so NULL can bind safely to any nullable target type.
-    if (v == null) return 'nvarchar(max)';
+    // Use VARCHAR(MAX) + SYBVARCHAR RPC encoding so NULL and Unicode bind
+    // safely on Azure SQL Edge and modern SQL Server (avoids SYBNVARCHAR 0x67).
+    if (v == null) return 'varchar(max)';
     if (v is bool) return 'bit';
     if (v is int) {
       // choose bigint if outside 32-bit range
@@ -780,13 +1085,13 @@ class MssqlClient {
       return 'int';
     }
     if (v is double) return 'float';
-    if (v is String) return 'nvarchar(max)';
+    if (v is String) return 'varchar(max)';
     // Declare DateTime parameters as NVARCHAR and let SQL convert explicitly
     // (e.g., CONVERT(datetime2, @when)). This avoids binary TDS packing.
     if (v is DateTime) return 'nvarchar(50)';
     if (v is Uint8List) return 'varbinary(max)';
-    // Fallback to NVARCHAR
-    return 'nvarchar(max)';
+    // Fallback to VARCHAR
+    return 'varchar(max)';
   }
 
   // Analyze whether strict SET options are needed and generate the SET batch.
@@ -828,6 +1133,116 @@ class _SetPlan {
   final bool needsSet;
   final String setPrefix;
   const _SetPlan(this.needsSet, this.setPrefix);
+}
+
+final class _NativeProcessEnv {
+  static final DynamicLibrary _processLib = DynamicLibrary.process();
+  static final DynamicLibrary _windowsKernel32 = Platform.isWindows
+      ? DynamicLibrary.open('kernel32.dll')
+      : _processLib;
+
+  static final int Function(Pointer<Utf16>, Pointer<Utf16>, int)?
+  _getEnvWindows = Platform.isWindows
+      ? _windowsKernel32.lookupFunction<
+          Uint32 Function(Pointer<Utf16>, Pointer<Utf16>, Uint32),
+          int Function(Pointer<Utf16>, Pointer<Utf16>, int)
+        >('GetEnvironmentVariableW')
+      : null;
+
+  static final int Function(Pointer<Utf16>, Pointer<Utf16>)? _setEnvWindows =
+      Platform.isWindows
+      ? _windowsKernel32.lookupFunction<
+          Int32 Function(Pointer<Utf16>, Pointer<Utf16>),
+          int Function(Pointer<Utf16>, Pointer<Utf16>)
+        >('SetEnvironmentVariableW')
+      : null;
+
+  static final Pointer<Utf8> Function(Pointer<Utf8>)? _getenvPosix =
+      Platform.isWindows
+      ? null
+      : _processLib.lookupFunction<
+          Pointer<Utf8> Function(Pointer<Utf8>),
+          Pointer<Utf8> Function(Pointer<Utf8>)
+        >('getenv');
+
+  static final int Function(Pointer<Utf8>)? _unsetenvPosix = Platform.isWindows
+      ? null
+      : _processLib.lookupFunction<
+          Int32 Function(Pointer<Utf8>),
+          int Function(Pointer<Utf8>)
+        >('unsetenv');
+
+  static final int Function(Pointer<Utf8>, Pointer<Utf8>, int)? _setenvPosix =
+      Platform.isWindows
+      ? null
+      : _processLib.lookupFunction<
+          Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Int32),
+          int Function(Pointer<Utf8>, Pointer<Utf8>, int)
+        >('setenv');
+
+  static String? get(String name) {
+    if (Platform.isWindows) {
+      final getEnv = _getEnvWindows!;
+
+      final namePtr = name.toNativeUtf16();
+      try {
+        final required = getEnv(namePtr, nullptr.cast<Utf16>(), 0);
+        if (required <= 0) return null;
+        final buffer = calloc<Uint16>(required);
+        try {
+          final written = getEnv(namePtr, buffer.cast<Utf16>(), required);
+          if (written <= 0) return null;
+          return buffer.cast<Utf16>().toDartString();
+        } finally {
+          calloc.free(buffer);
+        }
+      } finally {
+        malloc.free(namePtr);
+      }
+    }
+
+    final namePtr = name.toNativeUtf8();
+    try {
+      final valuePtr = _getenvPosix!(namePtr);
+      if (valuePtr == nullptr) return null;
+      return valuePtr.toDartString();
+    } finally {
+      malloc.free(namePtr);
+    }
+  }
+
+  static void set(String name, String? value) {
+    if (Platform.isWindows) {
+      final namePtr = name.toNativeUtf16();
+      final valuePtr = value?.toNativeUtf16();
+      try {
+        _setEnvWindows!(namePtr, valuePtr ?? nullptr.cast<Utf16>());
+      } finally {
+        malloc.free(namePtr);
+        if (valuePtr != null) malloc.free(valuePtr);
+      }
+      return;
+    }
+
+    if (value == null) {
+      final namePtr = name.toNativeUtf8();
+      try {
+        _unsetenvPosix!(namePtr);
+      } finally {
+        malloc.free(namePtr);
+      }
+      return;
+    }
+
+    final namePtr = name.toNativeUtf8();
+    final valuePtr = value.toNativeUtf8();
+    try {
+      _setenvPosix!(namePtr, valuePtr, 1);
+    } finally {
+      malloc.free(namePtr);
+      malloc.free(valuePtr);
+    }
+  }
 }
 
 class _TempBuf {
@@ -916,10 +1331,9 @@ _TempBuf _encodeForHost(int hostType, dynamic v) {
 // converted server-side according to the declared SQL type in sp_executesql.
 _RpcVal _encodeForRpc(dynamic v) {
   if (v == null) {
-    // Represent NULL by zero-length buffer of any type; server will see NULL
-    // when dbrpcparam datalen is 0.
+    // Represent NULL by zero-length buffer; server sees NULL when datalen is 0.
     final p = malloc<Uint8>(0);
-    return _RpcVal(SYBNVARCHAR, _TempBuf(p, 0));
+    return _RpcVal(SYBVARCHAR, _TempBuf(p, 0));
   }
   if (v is bool) {
     final p = malloc<Uint8>();
@@ -978,30 +1392,11 @@ class _StringDbBuf {
   _StringDbBuf(this.type, this.buf);
 }
 
-// Encode a Dart string as either UTF-8 (VARCHAR) if ASCII-only, or UTF-16LE (NVARCHAR) if it contains non-ASCII.
+// Encode strings as UTF-8 SYBVARCHAR for RPC. Azure SQL Edge rejects SYBNVARCHAR
+// (0x67) over sp_executesql; UTF-8 VARCHAR works across SQL Server variants.
 _StringDbBuf _encodeStringSmart(String s) {
-  bool ascii = true;
-  final units = s.codeUnits;
-  for (final cu in units) {
-    if (cu > 0x7F) {
-      ascii = false;
-      break;
-    }
-  }
-  if (ascii) {
-    final bytes = utf8.encode(s);
-    final p = malloc<Uint8>(bytes.length);
-    p.asTypedList(bytes.length).setAll(0, bytes);
-    return _StringDbBuf(SYBVARCHAR, _TempBuf(p, bytes.length));
-  }
-  // UTF-16LE encode
-  final len = units.length * 2;
-  final p = malloc<Uint8>(len);
-  final view = p.asTypedList(len);
-  for (int i = 0, j = 0; i < units.length; i++, j += 2) {
-    final cu = units[i];
-    view[j] = cu & 0xFF;
-    view[j + 1] = (cu >> 8) & 0xFF;
-  }
-  return _StringDbBuf(SYBNVARCHAR, _TempBuf(p, len));
+  final bytes = utf8.encode(s);
+  final p = malloc<Uint8>(bytes.length);
+  p.asTypedList(bytes.length).setAll(0, bytes);
+  return _StringDbBuf(SYBVARCHAR, _TempBuf(p, bytes.length));
 }

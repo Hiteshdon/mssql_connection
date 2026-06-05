@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [3.1.0]
+
+### Added
+- `connect()` options: `encrypt`, `trustServerCertificate`, and `tdsVersion` for TLS/TDS control on hosted and local SQL Server.
+- Integration tests for connect options and RPC null/Unicode parameter bindings.
+
+### Fixed
+- Parameterized queries (`getDataWithParams` / `writeDataWithParams`) now bind NULL and Unicode strings using UTF-8 `SYBVARCHAR`, fixing connection drops on Azure SQL Edge (Msg 3621 / type 0x67).
+- DB-Lib error messages are appended instead of overwritten, improving diagnosability.
+- Large `FOR JSON PATH` payloads no longer truncate when FreeTDS returns `BUF_FULL` from `dbnextrow()`.
+- macOS Homebrew library paths for Apple Silicon and Intel (`/opt/homebrew/lib`, `/usr/local/lib`).
+
 ## [3.0.0]
 
 ### Added

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -21,8 +22,7 @@ void main() {
     late String ip, port, db, user, pass;
 
     setUp(() {
-      final server =
-          Platform.environment['MSSQL_SERVER'] ?? '192.168.1.10:1433';
+      final server = Platform.environment['MSSQL_SERVER'] ?? '192.168.1.4:1433';
       user = Platform.environment['MSSQL_USER'] ?? 'sa';
       pass =
           Platform.environment['MSSQL_PASS'] ??
@@ -299,6 +299,388 @@ SELECT i, REPLICATE(N'X', 20) FROM N OPTION (MAXRECURSION 0);
       );
     }
   });
+
+  // ---------------------------------------------------------------------------
+  // Speed tests: focused on specific operations with assertion-based thresholds
+  // ---------------------------------------------------------------------------
+
+  group('Performance: Speed assertions (small-scale)', () {
+    final db = TempDbHarness();
+
+    setUpAll(() async => db.init());
+    tearDownAll(() async => db.dispose());
+
+    // -- writeBatch throughput -------------------------------------------------
+    test(
+      'writeBatch: 500 statements in one transaction < 10s',
+      () async {
+        await db.ensureConnected();
+        await db.recreateTable(
+          'CREATE TABLE dbo.SpeedBatch (id INT NOT NULL PRIMARY KEY, v NVARCHAR(50))',
+        );
+
+        final stmts = List.generate(
+          500,
+          (i) =>
+              "INSERT INTO dbo.SpeedBatch VALUES (${i + 1}, N'val_${i + 1}')",
+        );
+
+        final sw = Stopwatch()..start();
+        final results = await db.client.writeBatch(stmts);
+        sw.stop();
+
+        expect(results, hasLength(500));
+        _printBench(
+          op: 'writeBatch-500',
+          rows: 500,
+          ms: sw.elapsedMilliseconds,
+        );
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(10000),
+          reason: '500 batched writes should complete in < 10 s',
+        );
+      },
+      timeout: Timeout(Duration(seconds: 30)),
+    );
+
+    // -- BCP vs single-row INSERT comparison -----------------------------------
+    test(
+      'BCP vs single-row INSERT: 10,000 rows speed comparison',
+      () async {
+        await db.ensureConnected();
+        final ts = DateTime.now().millisecondsSinceEpoch;
+        await db.recreateTable(
+          'CREATE TABLE dbo.SpeedBcp_$ts (id INT NOT NULL PRIMARY KEY, val NVARCHAR(50))',
+        );
+        await db.recreateTable(
+          'CREATE TABLE dbo.SpeedSingle_$ts (id INT NOT NULL PRIMARY KEY, val NVARCHAR(50))',
+        );
+
+        const n = 10000;
+        final rows = List.generate(
+          n,
+          (i) => {'id': i + 1, 'val': 'v_${i + 1}'},
+        );
+
+        // BCP path
+        final swBcp = Stopwatch()..start();
+        final inserted = await db.client.bulkInsert(
+          'dbo.SpeedBcp_$ts',
+          rows,
+          batchSize: 2000,
+        );
+        swBcp.stop();
+        expect(inserted, n);
+
+        // Single-row parameterized INSERT path (baseline)
+        final swSingle = Stopwatch()..start();
+        await db.execute('BEGIN TRAN');
+        for (var i = 0; i < n; i++) {
+          await db.executeParams(
+            'INSERT INTO dbo.SpeedSingle_$ts (id, val) VALUES (@id, @val)',
+            {'@id': i + 1, '@val': 'v_${i + 1}'},
+          );
+        }
+        await db.execute('COMMIT');
+        swSingle.stop();
+
+        _printBench(op: 'BCP-10k', rows: n, ms: swBcp.elapsedMilliseconds);
+        _printBench(
+          op: 'SingleRPC-10k',
+          rows: n,
+          ms: swSingle.elapsedMilliseconds,
+        );
+        _printLine(
+          '[BCP vs Single] ratio = ${(swSingle.elapsedMilliseconds / (swBcp.elapsedMilliseconds == 0 ? 1 : swBcp.elapsedMilliseconds)).toStringAsFixed(1)}x faster with BCP',
+        );
+        expect(
+          swBcp.elapsedMilliseconds,
+          lessThan(swSingle.elapsedMilliseconds),
+          reason: 'BCP should be faster than per-row parameterized INSERT',
+        );
+      },
+      timeout: Timeout(Duration(minutes: 5)),
+    );
+
+    // -- getData throughput (100k rows) ----------------------------------------
+    test(
+      'getData: 100,000 rows fetched and JSON-decoded < 30s',
+      () async {
+        await db.ensureConnected();
+        await db.recreateTable(
+          'CREATE TABLE dbo.SpeedQuery (id INT NOT NULL PRIMARY KEY, val NVARCHAR(50))',
+        );
+
+        const n = 100000;
+        // Seed with set-based insert
+        await db.execute('''
+DECLARE @N INT = $n;
+;WITH Nums AS (SELECT 1 AS i UNION ALL SELECT i+1 FROM Nums WHERE i < @N)
+INSERT INTO dbo.SpeedQuery (id, val)
+SELECT i, REPLICATE(N'X', 20) FROM Nums OPTION (MAXRECURSION 0);
+''');
+
+        final sw = Stopwatch()..start();
+        final jsonStr = await db.query(
+          'SELECT id, val FROM dbo.SpeedQuery ORDER BY id',
+        );
+        sw.stop();
+
+        final parsed = parseRows(jsonStr);
+        expect(parsed.length, n);
+        _printBench(op: 'getData-100k', rows: n, ms: sw.elapsedMilliseconds);
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(30000),
+          reason: '100k rows getData should complete in < 30 s',
+        );
+      },
+      timeout: Timeout(Duration(seconds: 60)),
+    );
+
+    // -- getDataWithParams latency (per-query overhead) -------------------------
+    test(
+      'getDataWithParams: 1,000 parameterized SELECTs < 20s',
+      () async {
+        await db.ensureConnected();
+        await db.recreateTable(
+          'CREATE TABLE dbo.SpeedParams (id INT NOT NULL PRIMARY KEY, val NVARCHAR(50))',
+        );
+        const n = 1000;
+        // Seed rows
+        await db.execute('''
+DECLARE @N INT = $n;
+;WITH Nums AS (SELECT 1 AS i UNION ALL SELECT i+1 FROM Nums WHERE i < @N)
+INSERT INTO dbo.SpeedParams (id, val)
+SELECT i, N'seed' FROM Nums OPTION (MAXRECURSION 0);
+''');
+
+        final sw = Stopwatch()..start();
+        for (var i = 1; i <= n; i++) {
+          final r = await db.executeParams(
+            'SELECT id, val FROM dbo.SpeedParams WHERE id = @id',
+            {'@id': i},
+          );
+          final map = jsonDecode(r) as Map<String, dynamic>;
+          expect((map['rows'] as List).isNotEmpty, isTrue);
+        }
+        sw.stop();
+        _printBench(
+          op: 'getDataWithParams-1k-SELECTs',
+          rows: n,
+          ms: sw.elapsedMilliseconds,
+        );
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(20000),
+          reason: '1,000 parameterized SELECTs should complete in < 20 s',
+        );
+      },
+      timeout: Timeout(Duration(seconds: 60)),
+    );
+
+    // -- Mixed-type BCP (int, float, bit, nvarchar, datetime) ------------------
+    test(
+      'BCP mixed-type: 50,000 rows with diverse column types < 15s',
+      () async {
+        await db.ensureConnected();
+        final ts = DateTime.now().millisecondsSinceEpoch;
+        await db.recreateTable('''
+CREATE TABLE dbo.SpeedMixed_$ts (
+  id       INT NOT NULL PRIMARY KEY,
+  score    FLOAT NOT NULL,
+  active   BIT NOT NULL,
+  label    NVARCHAR(100) NOT NULL,
+  created  NVARCHAR(50) NOT NULL
+)''');
+
+        const n = 50000;
+        final now = DateTime.now();
+        final rows = List.generate(
+          n,
+          (i) => {
+            'id': i + 1,
+            'score': (i + 1) * 1.5,
+            'active': i % 2 == 0,
+            'label': 'row_label_${i + 1}',
+            'created': _formatDt(now),
+          },
+        );
+
+        final sw = Stopwatch()..start();
+        final inserted = await db.client.bulkInsert(
+          'dbo.SpeedMixed_$ts',
+          rows,
+          batchSize: 5000,
+        );
+        sw.stop();
+
+        expect(inserted, n);
+        _printBench(op: 'BCP-mixed-50k', rows: n, ms: sw.elapsedMilliseconds);
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(15000),
+          reason: '50k mixed-type BCP should complete in < 15 s',
+        );
+      },
+      timeout: Timeout(Duration(seconds: 60)),
+    );
+
+    // -- getRows convenience API -----------------------------------------------
+    test(
+      'getRows: returns parsed List directly for 10,000 rows',
+      () async {
+        await db.ensureConnected();
+        await db.recreateTable(
+          'CREATE TABLE dbo.SpeedGetRows (id INT NOT NULL PRIMARY KEY)',
+        );
+        const n = 10000;
+        await db.execute('''
+DECLARE @N INT = $n;
+;WITH Nums AS (SELECT 1 AS i UNION ALL SELECT i+1 FROM Nums WHERE i < @N)
+INSERT INTO dbo.SpeedGetRows (id) SELECT i FROM Nums OPTION (MAXRECURSION 0);
+''');
+
+        final sw = Stopwatch()..start();
+        final rows = await db.client.getRows('SELECT id FROM dbo.SpeedGetRows');
+        sw.stop();
+
+        expect(rows.length, n);
+        _printBench(op: 'getRows-10k', rows: n, ms: sw.elapsedMilliseconds);
+      },
+      timeout: Timeout(Duration(seconds: 30)),
+    );
+
+    // -- Connection reconnect latency ------------------------------------------
+    test(
+      'reconnect after disconnect completes < 2s',
+      () async {
+        await db.ensureConnected();
+        final conn = db.client;
+
+        await conn.disconnect();
+        expect(conn.isConnected, isFalse);
+
+        final sw = Stopwatch()..start();
+        // Force reconnect by calling getData (triggers _ensureConnectedOrReconnect)
+        final server =
+            Platform.environment['MSSQL_SERVER'] ?? '192.168.1.4:1433';
+        final parts = server.split(':');
+        final ip = parts.isNotEmpty ? parts.first : '127.0.0.1';
+        final port = parts.length > 1 ? parts[1] : '1433';
+        final ok = await conn.connect(
+          ip: ip,
+          port: port,
+          databaseName: db.dbName,
+          username: Platform.environment['MSSQL_USER'] ?? 'sa',
+          password:
+              Platform.environment['MSSQL_PASS'] ??
+              Platform.environment['MSSQL_PASSWORD'] ??
+              'eSeal@123',
+        );
+        sw.stop();
+        expect(ok, isTrue);
+        _printLine(
+          '[Reconnect] completed in ${_fmtMs(sw.elapsedMilliseconds)} ms',
+        );
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(2000),
+          reason: 'Reconnect to LAN SQL Server should be < 2 s',
+        );
+      },
+      timeout: Timeout(Duration(seconds: 10)),
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Speed tests: 1M row focused benchmarks
+  // ---------------------------------------------------------------------------
+
+  group('Performance: 1M row speed benchmarks', () {
+    final db = TempDbHarness();
+
+    setUpAll(() async => db.init());
+    tearDownAll(() async => db.dispose());
+
+    test(
+      'BCP bulk insert: 1,000,000 rows < 120s',
+      () async {
+        await db.ensureConnected();
+        await db.recreateTable(
+          'CREATE TABLE dbo.PerfSpeed1M (id INT NOT NULL PRIMARY KEY, flag BIT NOT NULL, note NVARCHAR(50) NULL)',
+        );
+
+        const n = 1000000;
+        const chunkSize = 50000;
+        var total = 0;
+        final sw = Stopwatch()..start();
+        for (var start = 1; start <= n; start += chunkSize) {
+          final end = min(start + chunkSize - 1, n);
+          final chunk = List.generate(
+            end - start + 1,
+            (i) => {
+              'id': start + i,
+              'flag': (start + i) % 2 == 0,
+              'note': 'n${start + i}',
+            },
+          );
+          total += await db.client.bulkInsert(
+            'dbo.PerfSpeed1M',
+            chunk,
+            batchSize: 10000,
+          );
+        }
+        sw.stop();
+        expect(total, n);
+        _printBench(op: 'BCP-1M', rows: n, ms: sw.elapsedMilliseconds);
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(120000),
+          reason: '1M row BCP should complete in < 120 s',
+        );
+      },
+      timeout: Timeout(Duration(minutes: 5)),
+    );
+
+    test(
+      'getData: read back 1,000,000 rows < 120s',
+      () async {
+        await db.ensureConnected();
+        // Uses the table populated by the insert test above (same harness/db)
+        final sw = Stopwatch()..start();
+        final json = await db.query(
+          'SELECT id, flag, note FROM dbo.PerfSpeed1M',
+        );
+        sw.stop();
+
+        final rows = parseRows(json);
+        expect(rows.length, 1000000);
+        _printBench(
+          op: 'getData-1M',
+          rows: rows.length,
+          ms: sw.elapsedMilliseconds,
+        );
+        expect(
+          sw.elapsedMilliseconds,
+          lessThan(120000),
+          reason: '1M row getData should complete in < 120 s',
+        );
+      },
+      timeout: Timeout(Duration(minutes: 5)),
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Shared format helper for DateTime -> SQL-compatible string
+// ---------------------------------------------------------------------------
+String _formatDt(DateTime dt) {
+  final d = dt.toUtc();
+  String two(int n) => n < 10 ? '0$n' : '$n';
+  return '${d.year.toString().padLeft(4, '0')}-${two(d.month)}-${two(d.day)}'
+      'T${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
 }
 
 // ---------- Helpers ----------
