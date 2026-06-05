@@ -8,3 +8,5 @@ pubspec.lock
 
 # FVM Version Cache
 .fvm/
+# ThirdParty packages
+third_party/

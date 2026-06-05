@@ -690,6 +690,12 @@ class MssqlClient {
         while (true) {
           final nr = db.dbnextrow(dbproc);
           if (nr == NO_MORE_ROWS) break;
+          if (nr == BUF_FULL) {
+            MssqlLogger.i(
+              'collectResults | op=dbnextrow | rc=$nr | status=retry',
+            );
+            continue;
+          }
           if (nr != REG_ROW && nr != MORE_ROWS) {
             MssqlLogger.w(
               'collectResults | op=dbnextrow | rc=$nr | warning=unexpected',
@@ -720,6 +726,12 @@ class MssqlClient {
         while (true) {
           final nr = db.dbnextrow(dbproc);
           if (nr == NO_MORE_ROWS) break;
+          if (nr == BUF_FULL) {
+            MssqlLogger.i(
+              'collectResults | op=dbnextrow | rc=$nr | status=retry-skip',
+            );
+            continue;
+          }
           if (nr != REG_ROW && nr != MORE_ROWS) break;
         }
       }

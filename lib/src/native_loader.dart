@@ -16,19 +16,29 @@ class NativeLoader {
       NativeLogger.i('iOS: using DynamicLibrary.process()');
       return DynamicLibrary.process();
     } else if (Platform.isMacOS) {
-      // Expect the dylib to be available on the system or bundled appropriately.
-      // Try common names in order.
-      NativeLogger.i('macOS: trying common sybdb dylib names');
-      for (final name in ['libsybdb.dylib', 'libsybdb.5.dylib']) {
+      // Try bare names first, then Homebrew paths for Apple Silicon and Intel.
+      // On Apple Silicon, Homebrew installs to /opt/homebrew/lib.
+      // On Intel Macs, Homebrew installs to /usr/local/lib.
+      // dlopen with bare names does not search these directories by default.
+      NativeLogger.i('macOS[DB]: trying common sybdb dylib names');
+      final paths = _buildMacOSPaths(['libsybdb.dylib', 'libsybdb.5.dylib']);
+      final tried = <String>[];
+      Object? lastErr;
+      for (final p in paths) {
+        tried.add(p);
         try {
-          NativeLogger.i('macOS: trying $name');
-          final lib = DynamicLibrary.open(name);
-          NativeLogger.i('macOS: opened $name');
+          NativeLogger.i('macOS[DB]: trying $p');
+          final lib = DynamicLibrary.open(p);
+          NativeLogger.i('macOS[DB]: opened $p');
           return lib;
         } catch (e) {
-          NativeLogger.w('macOS: failed $name -> $e');
+          lastErr = e;
+          NativeLogger.w('macOS[DB]: failed $p -> $e');
         }
       }
+      throw UnsupportedError(
+        'Could not load FreeTDS DB-Lib for this platform. Tried: ${tried.join('; ')}${lastErr != null ? ' | Last error: $lastErr' : ''}',
+      );
     } else if (Platform.isLinux) {
       // Prefer bundled linux/Libraries first
       NativeLogger.i('Linux[DB]: building candidate directories');
@@ -166,16 +176,26 @@ class NativeLoader {
       NativeLogger.i('iOS: using DynamicLibrary.process()');
       return DynamicLibrary.process();
     } else if (Platform.isMacOS) {
-      for (final name in ['libct.dylib', 'libct.4.dylib']) {
+      // Try bare names first, then Homebrew paths for Apple Silicon and Intel.
+      NativeLogger.i('macOS[CT]: trying common ct dylib names');
+      final paths = _buildMacOSPaths(['libct.dylib', 'libct.4.dylib']);
+      final tried = <String>[];
+      Object? lastErr;
+      for (final p in paths) {
+        tried.add(p);
         try {
-          NativeLogger.i('macOS: trying $name');
-          final lib = DynamicLibrary.open(name);
-          NativeLogger.i('macOS: opened $name');
+          NativeLogger.i('macOS[CT]: trying $p');
+          final lib = DynamicLibrary.open(p);
+          NativeLogger.i('macOS[CT]: opened $p');
           return lib;
         } catch (e) {
-          NativeLogger.w('macOS: failed $name -> $e');
+          lastErr = e;
+          NativeLogger.w('macOS[CT]: failed $p -> $e');
         }
       }
+      throw UnsupportedError(
+        'Could not load FreeTDS CT-Lib for this platform. Tried: ${tried.join('; ')}${lastErr != null ? ' | Last error: $lastErr' : ''}',
+      );
     } else if (Platform.isLinux) {
       // Prefer bundled linux/Libraries first
       NativeLogger.i('Linux[CT]: building candidate directories');
@@ -277,7 +297,7 @@ class NativeLoader {
         }
       } catch (_) {}
       throw UnsupportedError(
-        'Could not load FreeTDS CT-Lib for this platform. Tried: ${tried.join('; ')}${' | Last error: $lastErr'}',
+        'Could not load FreeTDS CT-Lib for this platform. Tried: ${tried.join('; ')}${lastErr != null ? ' | Last error: $lastErr' : ''}',
       );
     }
     throw UnsupportedError('Could not load FreeTDS CT-Lib for this platform.');
@@ -341,5 +361,16 @@ class NativeLoader {
     } catch (_) {
       // Ignore: not fatal; used as a hint only.
     }
+  }
+
+  /// Builds a list of candidate dylib paths for macOS.
+  /// Tries bare names first (system), then Homebrew paths for Apple Silicon
+  /// (/opt/homebrew/lib) and Intel (/usr/local/lib).
+  static List<String> _buildMacOSPaths(List<String> names) {
+    final paths = <String>[...names];
+    for (final dir in ['/opt/homebrew/lib', '/usr/local/lib']) {
+      for (final n in names) paths.add('$dir/$n');
+    }
+    return paths;
   }
 }

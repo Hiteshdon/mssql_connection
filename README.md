@@ -151,6 +151,51 @@ final inserted = await mssqlConnection.bulkInsert('dbo.Users', rows, batchSize: 
 
 ---
 
+### Parameterized queries
+
+Avoid manual string concatenation and let the library pass parameters safely via `sp_executesql`:
+
+```dart
+final res = await mssqlConnection.getDataWithParams(
+  'SELECT * FROM Users WHERE Name LIKE @name AND IsActive = @active',
+  {
+    'name': '%john%',
+    'active': true,
+  },
+);
+```
+
+---
+
+### Transactions
+
+```dart
+await mssqlConnection.beginTransaction();
+try {
+  await mssqlConnection.writeData('UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 1');
+  await mssqlConnection.writeData('UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 2');
+  await mssqlConnection.commit();
+} catch (_) {
+  await mssqlConnection.rollback();
+  rethrow;
+}
+```
+
+---
+
+### Bulk insertion
+
+```dart
+final rows = [
+  {'Id': 1, 'Name': 'Alice'},
+  {'Id': 2, 'Name': 'Bob'},
+];
+final inserted = await mssqlConnection.bulkInsert('dbo.Users', rows, batchSize: 1000);
+```
+```
+
+---
+
 ### **Disconnect**
 
 Close the database connection when it's no longer needed:
