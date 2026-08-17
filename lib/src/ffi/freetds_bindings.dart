@@ -152,11 +152,16 @@ typedef _dbloginDart = Pointer<LOGINREC> Function();
 typedef _dbsetlnameC = Int32 Function(Pointer<LOGINREC>, Pointer<Utf8>, Int32);
 typedef _dbsetlnameDart = int Function(Pointer<LOGINREC>, Pointer<Utf8>, int);
 
-/// C: DBPROCESS* dbopen(LOGINREC*, const char* server) — Open connection
+/// C: DBPROCESS* tdsdbopen(LOGINREC*, const char* server, int msdblib) —
+/// Open connection. `dbopen` itself is a macro (see sybdb.h) that expands to
+/// this call; the plain `dbopen` symbol is only exported when FreeTDS is
+/// built with `--enable-sybase-compat`, which our prebuilt libraries are not,
+/// so we bind `tdsdbopen` directly and pass msdblib=1 to match the
+/// `--enable-msdblib` / `ENABLE_MSDBLIB=ON` build flag used for all platforms.
 typedef _dbopenC =
-    Pointer<DBPROCESS> Function(Pointer<LOGINREC>, Pointer<Utf8>);
+    Pointer<DBPROCESS> Function(Pointer<LOGINREC>, Pointer<Utf8>, Int32);
 typedef _dbopenDart =
-    Pointer<DBPROCESS> Function(Pointer<LOGINREC>, Pointer<Utf8>);
+    Pointer<DBPROCESS> Function(Pointer<LOGINREC>, Pointer<Utf8>, int);
 
 /// C: int dbclose(DBPROCESS*) — Close connection (DBPROCESS)
 typedef _dbcloseC = Int32 Function(Pointer<DBPROCESS>);
@@ -547,8 +552,8 @@ class DBLib {
       'dbsetlname',
     ); // Set LOGINREC field by selector
     dbopen = _lib.lookupFunction<_dbopenC, _dbopenDart>(
-      'dbopen',
-    ); // Open DBPROCESS connection
+      'tdsdbopen',
+    ); // Open DBPROCESS connection (dbopen macro target; msdblib=1 arg required)
     dbclose = _lib.lookupFunction<_dbcloseC, _dbcloseDart>(
       'dbclose',
     ); // Close DBPROCESS

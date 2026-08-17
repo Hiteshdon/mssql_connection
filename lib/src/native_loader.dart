@@ -47,10 +47,12 @@ class NativeLoader {
         final scriptDir = File.fromUri(Platform.script).parent;
         final root = scriptDir.parent; // repo root when running from tool/
         final rootPath = root.path;
+        candidateDirs.add('$rootPath/linux/Libraries/lib');
         candidateDirs.add('$rootPath/linux/Libraries');
       } catch (_) {}
       try {
         final cwd = Directory.current.path;
+        candidateDirs.add('$cwd/linux/Libraries/lib');
         candidateDirs.add('$cwd/linux/Libraries');
       } catch (_) {}
       NativeLogger.i('Linux[DB]: candidateDirs=${candidateDirs.join('; ')}');
@@ -204,10 +206,12 @@ class NativeLoader {
         final scriptDir = File.fromUri(Platform.script).parent;
         final root = scriptDir.parent; // repo root when running from tool/
         final rootPath = root.path;
+        candidateDirs.add('$rootPath/linux/Libraries/lib');
         candidateDirs.add('$rootPath/linux/Libraries');
       } catch (_) {}
       try {
         final cwd = Directory.current.path;
+        candidateDirs.add('$cwd/linux/Libraries/lib');
         candidateDirs.add('$cwd/linux/Libraries');
       } catch (_) {}
       NativeLogger.i('Linux[CT]: candidateDirs=${candidateDirs.join('; ')}');

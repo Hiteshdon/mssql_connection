@@ -270,7 +270,9 @@ class MssqlClient {
           }
           try {
             MssqlLogger.i('connect | op=dbopen | server=$server');
-            _dbproc = _db!.dbopen(login, srv);
+            // msdblib=1 matches the --enable-msdblib / ENABLE_MSDBLIB=ON
+            // flag used to build all bundled FreeTDS libraries.
+            _dbproc = _db!.dbopen(login, srv, 1);
           } finally {
             if (trustServerCertificate) {
               try {
