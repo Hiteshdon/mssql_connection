@@ -802,7 +802,9 @@ int _dartDbErrHandler(
       '${safeFromUtf8(dberrstr)}'
       '${oserrstr == nullptr ? '' : ' | ${safeFromUtf8(oserrstr)}'}';
   _DbLibErrorStore.setLastError(dbproc, msg);
-  return 0; // per DB-Lib docs, return value ignored
+  // Return INT_CANCEL (2) so DB-Lib returns FAIL from the failing API call
+  // instead of calling exit(). Returning INT_EXIT (0) would kill the process.
+  return 2;
 }
 
 int _dartDbMsgHandler(
@@ -847,8 +849,11 @@ int _dartDbMsgHandler(
 }
 
 // Exposed pointers for installation; keep them alive for the process lifetime.
+// The second arg to Pointer.fromFunction is the exceptional return value used
+// when the Dart callback throws. Use INT_CANCEL (2) for the error handler so
+// DB-Lib always gets CANCEL rather than INT_EXIT (0) which would kill the process.
 final Pointer<NativeFunction<_errHandlerSigC>> kErrHandlerPtr =
-    Pointer.fromFunction<_errHandlerSigC>(_dartDbErrHandler, 0);
+    Pointer.fromFunction<_errHandlerSigC>(_dartDbErrHandler, 2);
 final Pointer<NativeFunction<_msgHandlerSigC>> kMsgHandlerPtr =
     Pointer.fromFunction<_msgHandlerSigC>(_dartDbMsgHandler, 0);
 

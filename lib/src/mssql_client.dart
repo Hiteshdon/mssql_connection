@@ -312,7 +312,9 @@ class MssqlClient {
       }
 
       if (_dbproc == nullptr) {
-        MssqlLogger.e('connect | op=dbopen | server=$server | error=nullptr');
+        final dberr = DBLib.takeLastError(nullptr) ?? DBLib.takeLastError(null) ?? 'none';
+        final dbmsg = DBLib.takeLastMessage(nullptr) ?? DBLib.takeLastMessage(null) ?? 'none';
+        MssqlLogger.e('connect | op=dbopen | server=$server | error=nullptr | dberr=$dberr | dbmsg=$dbmsg');
         return false;
       }
 

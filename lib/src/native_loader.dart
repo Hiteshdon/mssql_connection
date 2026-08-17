@@ -368,12 +368,16 @@ class NativeLoader {
   }
 
   /// Builds a list of candidate dylib paths for macOS.
-  /// Tries bare names first (system), then Homebrew paths for Apple Silicon
-  /// (/opt/homebrew/lib) and Intel (/usr/local/lib).
+  /// Tries bare names first (system), then Homebrew formula paths and lib dirs
+  /// for Apple Silicon (/opt/homebrew) and Intel (/usr/local).
+  /// The formula-specific opt/ paths are tried first because /opt/homebrew/lib
+  /// contains symlinks that the App Sandbox may block; bundled apps should copy
+  /// the actual dylibs from opt/.
   static List<String> _buildMacOSPaths(List<String> names) {
     final paths = <String>[...names];
-    for (final dir in ['/opt/homebrew/lib', '/usr/local/lib']) {
-      for (final n in names) paths.add('$dir/$n');
+    for (final prefix in ['/opt/homebrew', '/usr/local']) {
+      for (final n in names) paths.add('$prefix/opt/freetds/lib/$n');
+      for (final n in names) paths.add('$prefix/lib/$n');
     }
     return paths;
   }
