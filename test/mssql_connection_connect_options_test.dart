@@ -65,6 +65,26 @@ void main() {
       await expectConnected(tdsVersion: '7.4');
     });
 
+    test('connect with tdsVersion=7.4 negotiates TDS 7.4 protocol', () async {
+      await expectConnected(tdsVersion: '7.4');
+
+      final rows = parseRows(
+        await conn.getData('''
+SELECT protocol_version
+FROM sys.dm_exec_connections
+WHERE session_id = @@SPID
+'''),
+      );
+      expect(rows, hasLength(1));
+      final protocolVersion = rows.first['protocol_version'];
+      expect(protocolVersion, isNotNull);
+      // TDS major version is the high byte (7.4 → 0x74xxxxxx).
+      final pv = protocolVersion is int
+          ? protocolVersion
+          : int.parse(protocolVersion.toString());
+      expect((pv >> 24) & 0xFF, 0x74);
+    });
+
     test('connect ignores unsupported tdsVersion and falls back', () async {
       await expectConnected(tdsVersion: '9.9');
     });

@@ -10,7 +10,8 @@ import '../test_utils.dart';
 /// Performance benchmarks for MssqlConnection.
 ///
 /// Notes:
-/// - Defaults to increasing sizes: 1M, 5M, 10M (override via PERF_SIZES).
+/// - Defaults to 50K, 100K rows (override via PERF_SIZES).
+/// - Stress testing: PERF_SIZES=1000000,5000000,10000000
 /// - These are heavy, long-running tests meant for local benchmarking. Tag or
 ///   filter them in CI if needed.
 /// - Ensure your SQL Server has sufficient resources and the login has rights
@@ -688,9 +689,9 @@ String _formatDt(DateTime dt) {
 List<int> _readPerfSizes() {
   final env = Platform.environment['PERF_SIZES'];
   if (env == null || env.trim().isEmpty) {
-    // Default to increasing sizes suitable for stress testing.
-    // Override via PERF_SIZES, e.g. "100000,1000000" for lighter runs.
-    return [1000000, 5000000, 10000000];
+    // Default to moderate sizes for repeatable local/CI runs (<30 min target).
+    // Stress mode: PERF_SIZES=1000000,5000000,10000000
+    return [50000, 100000];
   }
   return env
       .split(',')

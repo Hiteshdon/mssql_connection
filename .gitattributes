@@ -1,0 +1,6 @@
+# Vendored third-party sources and build scripts must keep their original
+# (LF) line endings — autotools scripts (configure, config.guess, install-sh,
+# etc.) and POSIX shell scripts break when checked out with CRLF.
+third_party/** -text
+scripts/** -text
+*.sh text eol=lf
