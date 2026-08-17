@@ -116,6 +116,12 @@ const int DBTEXTSIZE = 17; // set text size for large text retrieval
 // Per sybdb.h, DBSETUSER and DBSETPWD constants used with dbsetlname()
 const int DBSETUSER = 2;
 const int DBSETPWD = 3;
+// DBSETCHARSET (per sybdb.h: #define DBSETLCHARSET(x,y) dbsetlname(x,y,10)) —
+// negotiates the DB-Lib client character set for this login. Used to force
+// UTF-8 so SYBVARCHAR parameters/columns round-trip non-Latin-1 text
+// (CJK/Arabic/emoji) correctly instead of being downcast through the
+// server's default single-byte codepage.
+const int DBSETCHARSET = 10;
 
 // dbbind variable types (sybdb.h)
 const int CHARBIND = 0; // Bind column as char[]

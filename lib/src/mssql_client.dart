@@ -174,6 +174,28 @@ class MssqlClient {
           }
         }
 
+        // Negotiate UTF-8 as the DB-Lib client character set so SYBVARCHAR
+        // parameters/columns (see _encodeStringSmart) round-trip non-Latin-1
+        // text (CJK/Arabic/emoji) correctly instead of being downcast
+        // through the server's default single-byte codepage.
+        try {
+          final charsetPtr = 'UTF-8'.toNativeUtf8();
+          try {
+            final rcCharset = _db!.dbsetlname(
+              login,
+              charsetPtr,
+              DBSETCHARSET,
+            );
+            MssqlLogger.i(
+              'connect | op=dbsetlname | option=DBSETCHARSET | value=UTF-8 | rc=$rcCharset',
+            );
+          } finally {
+            malloc.free(charsetPtr);
+          }
+        } catch (e) {
+          MssqlLogger.w('connect | op=dbsetlname | option=DBSETCHARSET | error=$e');
+        }
+
         // Enable BCP on this login so that bulk insert APIs are available on the session.
         try {
           final rcBcp = _db!.dbsetlbool(login, 1, DBSETBCP);
@@ -889,11 +911,11 @@ class MssqlClient {
           0, // input param
           rpcVal.type,
           -1, // maxlen: -1 for non-OUTPUT
+          // datalen: NVARCHAR expects character count (buf holds UTF-16LE
+          // bytes, so divide by 2); other types expect bytes.
           (rpcVal.type == SYBNVARCHAR)
-              ? (rpcVal.buf.length << 1)
-              : rpcVal
-                    .buf
-                    .length, // datalen: for NVARCHAR pass character count; for others, bytes
+              ? (rpcVal.buf.length >> 1)
+              : rpcVal.buf.length,
           rpcVal.buf.ptr,
         );
         malloc.free(cname);
@@ -916,6 +938,11 @@ class MssqlClient {
       final rcSend = db.dbrpcsend(dbproc);
       if (rcSend != SUCCEED) {
         MssqlLogger.e('executeParams | op=dbrpcsend | rc=$rcSend | error=fail');
+        try {
+          final z = ''.toNativeUtf8();
+          db.dbrpcinit(dbproc, z, DBRPCRESET);
+          malloc.free(z);
+        } catch (_) {}
         final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
         throw SQLException(em ?? 'dbrpcsend failed');
       }
@@ -1078,7 +1105,15 @@ class MssqlClient {
 
   static String _inferSqlType(dynamic v) {
     // Use VARCHAR(MAX) + SYBVARCHAR RPC encoding so NULL and Unicode bind
-    // safely on Azure SQL Edge and modern SQL Server (avoids SYBNVARCHAR 0x67).
+    // safely on Azure SQL Edge and modern SQL Server (avoids SYBNVARCHAR
+    // 0x67). Known limitation: this driver's dbrpcparam binding cannot send
+    // a working SYBNVARCHAR parameter at all right now — both nvarchar(max)
+    // and bounded nvarchar(4000) corrupt the TDS RPC stream (wire type byte
+    // 0x67 arrives as 0xE7 / "invalid data length or metadata length",
+    // sometimes desyncing subsequent parameters). Non-Latin-1 text (CJK,
+    // Arabic, emoji) therefore does not round-trip correctly through
+    // executeParams/writeDataWithParams today; fixing that needs a correct
+    // SYBNVARCHAR dbrpcparam wire encoding, not attempted here.
     if (v == null) return 'varchar(max)';
     if (v is bool) return 'bit';
     if (v is int) {
@@ -1396,6 +1431,7 @@ class _StringDbBuf {
 
 // Encode strings as UTF-8 SYBVARCHAR for RPC. Azure SQL Edge rejects SYBNVARCHAR
 // (0x67) over sp_executesql; UTF-8 VARCHAR works across SQL Server variants.
+// See _inferSqlType for why SYBNVARCHAR isn't used even for non-Latin-1 text.
 _StringDbBuf _encodeStringSmart(String s) {
   final bytes = utf8.encode(s);
   final p = malloc<Uint8>(bytes.length);
