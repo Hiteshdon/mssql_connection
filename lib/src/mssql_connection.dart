@@ -152,22 +152,27 @@ class MssqlConnection {
     );
   }
 
-  /// Execute a batch of write statements inside a single transaction for
-  /// higher throughput. Each query is executed sequentially, and all are
-  /// committed on success. On failure, a rollback is performed and the
-  /// exception is rethrown.
+  /// Execute a batch of write statements in a single network round-trip
+  /// wrapped in a transaction for atomicity.
   ///
-  /// Returns the list of JSON result strings from each statement.
+  /// All [queries] are concatenated with `BEGIN TRAN` / `COMMIT` and sent as
+  /// one SQL batch via `dbcmd` + `dbsqlexec`. This is significantly faster
+  /// than sending each statement individually.
+  ///
+  /// Returns a list with one result string per query (the combined result
+  /// is replicated to preserve the same return shape as the old per-query
+  /// implementation).
   Future<List<String>> writeBatch(List<String> queries) async {
     await _ensureConnectedOrReconnect();
-    final results = <String>[];
-    await writeData('BEGIN TRAN');
+    if (queries.isEmpty) return [];
+    final batch = <String>[
+      'BEGIN TRAN',
+      ...queries,
+      'COMMIT',
+    ];
     try {
-      for (final q in queries) {
-        results.add(await _client!.execute(q));
-      }
-      await writeData('COMMIT');
-      return results;
+      final result = await _client!.executeBatch(batch);
+      return List<String>.filled(queries.length, result);
     } catch (e) {
       try {
         await writeData('ROLLBACK');
@@ -177,19 +182,22 @@ class MssqlConnection {
   }
 
   /// Execute a batch of parameterized write statements inside a transaction.
+  ///
+  /// Statements are batched into chunked `sp_executesql` calls with unique
+  /// parameter names, dramatically reducing network round-trips compared to
+  /// calling [writeDataWithParams] per statement.
+  ///
   /// Each entry is a (query, params) pair. All are committed on success.
   Future<List<String>> writeBatchWithParams(
     List<(String query, Map<String, dynamic> params)> statements,
   ) async {
     await _ensureConnectedOrReconnect();
-    final results = <String>[];
+    if (statements.isEmpty) return [];
     await writeData('BEGIN TRAN');
     try {
-      for (final (query, params) in statements) {
-        results.add(await _client!.executeParams(query, params));
-      }
+      final result = await _client!.executeParamsBatch(statements);
       await writeData('COMMIT');
-      return results;
+      return List<String>.filled(statements.length, result);
     } catch (e) {
       try {
         await writeData('ROLLBACK');

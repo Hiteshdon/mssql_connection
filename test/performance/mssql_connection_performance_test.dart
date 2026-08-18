@@ -151,47 +151,31 @@ void main() {
 
     for (final n in sizes) {
       test(
-        'Parameterized inserts: $n rows (executeParams)',
+        'Parameterized batch inserts: $n rows (executeParamsBatch)',
         () async {
           final table =
-              'dbo.[PerfParams_${DateTime.now().millisecondsSinceEpoch}]';
+              'dbo.[PerfParamsBatch_${DateTime.now().millisecondsSinceEpoch}]';
           await db.recreateTable(
             'CREATE TABLE $table (id INT NOT NULL PRIMARY KEY, payload NVARCHAR(100) NOT NULL)',
           );
 
-          // Per-row RPCs (slower). Use a single transaction and NOCOUNT to mitigate overhead.
-          const batch = 1000; // per-batch stats
-          final batches = (n / batch).ceil();
-          final latencies = <int>[]; // ms per batch
-          var totalInserted = 0;
-          await db.execute('BEGIN TRAN; SET NOCOUNT ON;');
-          final total = Stopwatch()..start();
-          for (var b = 0; b < batches; b++) {
-            final startId = b * batch + 1;
-            final endId = min((b + 1) * batch, n);
-            final sw = Stopwatch()..start();
-            for (var id = startId; id <= endId; id++) {
-              await db.executeParams(
-                'INSERT INTO $table (id, payload) VALUES (@id, @p)',
-                {'@id': id, '@p': 'x' * 20},
-              );
-            }
-            sw.stop();
-            latencies.add(sw.elapsedMilliseconds);
-            totalInserted += (endId - startId + 1);
-          }
-          total.stop();
-          await db.execute('COMMIT');
-          expect(totalInserted, n);
+          final statements = List.generate(
+            n,
+            (i) => (
+              'INSERT INTO $table (id, payload) VALUES (@id, @p)',
+              <String, dynamic>{'@id': i + 1, '@p': 'x' * 20},
+            ),
+          );
 
-          final avgBatchMs = latencies.isEmpty
-              ? 0
-              : (latencies.reduce((a, b) => a + b) / latencies.length).round();
+          final sw = Stopwatch()..start();
+          final results = await db.client.writeBatchWithParams(statements);
+          sw.stop();
+
+          expect(results, hasLength(n));
           _printBench(
-            op: 'Params INSERT',
+            op: 'Params BATCH INSERT',
             rows: n,
-            ms: total.elapsedMilliseconds,
-            extra: 'avg batch ${_fmtMs(avgBatchMs)} ms',
+            ms: sw.elapsedMilliseconds,
           );
         },
         timeout: Timeout(Duration(days: 1)),

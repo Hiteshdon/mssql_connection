@@ -699,6 +699,130 @@ class MssqlClient {
     }
   }
 
+  /// Execute multiple SQL statements as a single batch in one round-trip.
+  ///
+  /// Joins all [statements] with `;\n` and sends them via a single
+  /// `dbcmd` + `dbsqlexec` call. Much faster than executing each statement
+  /// individually since it avoids per-statement network round-trips.
+  ///
+  /// Returns the combined JSON result from `_collectResults` which aggregates
+  /// affected row counts across all statements in the batch.
+  Future<String> executeBatch(List<String> statements) async {
+    _ensureConnected();
+    if (statements.isEmpty) {
+      return '{"columns":[],"rows":[],"affected":0}';
+    }
+    final db = _db!;
+    final dbproc = _dbproc!;
+    final combined = statements.join(';\n');
+    final cmd = combined.toNativeUtf8();
+    try {
+      MssqlLogger.i('executeBatch | op=dbcmd | stmtCount=${statements.length} | sqlLen=${combined.length}');
+      final rc1 = db.dbcmd(dbproc, cmd);
+      if (rc1 != SUCCEED) {
+        MssqlLogger.e('executeBatch | op=dbcmd | rc=$rc1 | error=fail');
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+        throw SQLException(em ?? 'dbcmd failed (batch)');
+      }
+      MssqlLogger.i('executeBatch | op=dbsqlexec');
+      final rc2 = db.dbsqlexec(dbproc);
+      if (rc2 != SUCCEED) {
+        MssqlLogger.e('executeBatch | op=dbsqlexec | rc=$rc2 | error=fail');
+        final em = DBLib.takeLastMessage(dbproc) ?? DBLib.takeLastError(dbproc);
+        throw SQLException(em ?? 'dbsqlexec failed (batch)');
+      }
+      return _collectResults(db, dbproc);
+    } finally {
+      malloc.free(cmd);
+    }
+  }
+
+  /// Execute multiple parameterized statements as a single SQL batch.
+  ///
+  /// Replaces `@param` placeholders with safely escaped SQL literals and
+  /// sends all statements in one `dbcmd` + `dbsqlexec` round-trip via
+  /// [executeBatch].
+  ///
+  /// This is dramatically faster than calling [executeParams] per statement
+  /// because it reduces network round-trips from N to 1 (or a few chunks
+  /// for very large batches).
+  ///
+  /// [chunkSize] controls how many statements are sent per batch. Default 1000.
+  Future<String> executeParamsBatch(
+    List<(String query, Map<String, dynamic> params)> statements, {
+    int chunkSize = 1000,
+  }) async {
+    _ensureConnected();
+    if (statements.isEmpty) {
+      return '{"columns":[],"rows":[],"affected":0}';
+    }
+
+    int totalAffected = 0;
+    String lastResult = '{"columns":[],"rows":[],"affected":0}';
+
+    for (int i = 0; i < statements.length; i += chunkSize) {
+      final end = (i + chunkSize < statements.length)
+          ? i + chunkSize
+          : statements.length;
+
+      final sqlStatements = <String>[];
+      for (int j = i; j < end; j++) {
+        final (query, params) = statements[j];
+        String resolved = query;
+        params.forEach((k, v) {
+          final paramName = _normalizeParamName(k);
+          resolved = resolved.replaceAll(paramName, _toSqlLiteral(v));
+        });
+        sqlStatements.add(resolved);
+      }
+
+      MssqlLogger.i(
+        'executeParamsBatch | op=chunk | stmts=${end - i} | offset=$i',
+      );
+
+      lastResult = await executeBatch(sqlStatements);
+
+      try {
+        final decoded = jsonDecode(lastResult);
+        if (decoded is Map && decoded['affected'] is int) {
+          totalAffected += decoded['affected'] as int;
+        }
+      } catch (_) {}
+    }
+
+    final decoded = jsonDecode(lastResult);
+    if (decoded is Map) {
+      decoded['affected'] = totalAffected;
+      return jsonEncode(decoded);
+    }
+    return lastResult;
+  }
+
+  /// Convert a Dart value to a safe SQL literal string.
+  static String _toSqlLiteral(dynamic v) {
+    if (v == null) return 'NULL';
+    if (v is bool) return v ? '1' : '0';
+    if (v is int) return v.toString();
+    if (v is double) {
+      if (v.isNaN || v.isInfinite) return 'NULL';
+      return v.toString();
+    }
+    if (v is DateTime) {
+      return "'${_formatDateTimeForSql(v)}'";
+    }
+    if (v is Uint8List) {
+      if (v.isEmpty) return '0x';
+      final hex = v.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+      return '0x$hex';
+    }
+    if (v is String) {
+      final escaped = v.replaceAll("'", "''");
+      return "N'$escaped'";
+    }
+    final s = v.toString().replaceAll("'", "''");
+    return "N'$s'";
+  }
+
   /// Execute a plain SQL text command and return a JSON payload.
   ///
   /// Returns a JSON String of the form:
