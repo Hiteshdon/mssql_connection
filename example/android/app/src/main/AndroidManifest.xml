@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for mssql_connection to reach the SQL Server over the network. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="example"
         android:name="${applicationName}"

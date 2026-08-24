@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Documented and addressed a long-standing gap where Android (and other platform) consumers hit `Failed to load dynamic library 'libsybdb.so': dlopen failed: library "libsybdb.so" not found` at runtime because this package ships native libraries but was never wired as a Flutter plugin, so Flutter's automatic native-library bundling never applied. `mssql_connection` intentionally stays a pure Dart package (so it also works in plain Dart backend/CLI projects); the new setup command replaces manual copy-pasting of `.so`/`.dylib`/`.dll` files into consumer projects.
 - `NativeLoader` on Linux now also checks `<executable-dir>/lib` (the location Flutter's Linux bundle layout uses) in addition to the existing dev-mode relative paths.
+- Documented that Android apps also need `<uses-permission android:name="android.permission.INTERNET" />` in their manifest (not added by `flutter create` by default), since its absence causes `connect()` to fail instantly with no error distinguishing it from a native-library problem. Added it to the example app's manifest and verified an end-to-end connection + query against a live SQL Server on a real Android device.
 
 ## [3.1.0]
 

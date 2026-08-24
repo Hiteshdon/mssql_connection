@@ -81,6 +81,21 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
    automatically, and `libsybdb.so`/`libct.so` for all three bundled ABIs
    end up in the built APK's `lib/` folder with no manual step.)
 
+   **Android: also add the INTERNET permission.** `flutter create` does not
+   add this by default, and its absence produces a `connect()` failure that
+   looks identical to a native-library problem (both just return `false`
+   with no distinguishing error in the UI). Add this to
+   `android/app/src/main/AndroidManifest.xml`, as a direct child of the
+   top-level `<manifest>` element:
+
+   ```xml
+   <uses-permission android:name="android.permission.INTERNET" />
+   ```
+
+   (Verified end-to-end on a real Android device: after adding both the
+   Gradle hook above and this permission, the example app connected to a
+   live SQL Server and ran a query successfully.)
+
 4. **Import the Plugin**:
    Include the plugin in your Dart code:
 
