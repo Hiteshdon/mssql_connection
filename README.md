@@ -38,14 +38,36 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
    flutter pub get
    ```
 
-3. **Import the Plugin**:
+3. **Copy native libraries (Flutter apps only, one-time step)**:
+
+   `mssql_connection` is a pure Dart package (not a registered Flutter
+   plugin), so it works in plain Dart backend/CLI projects too. The
+   trade-off: Flutter's automatic native-library bundling only applies to
+   registered plugins, so **Flutter apps must run this once** after adding
+   the dependency (and again after `flutter clean` or upgrading the
+   package), from the root of your Flutter app:
+
+   ```bash
+   dart run mssql_connection:setup
+   ```
+
+   This copies the bundled FreeTDS libraries into `android/app/src/main/jniLibs`,
+   `linux/Libraries`, `windows/Libraries`, and `macos/Libraries`, and prints
+   the remaining manual step needed for iOS (adding the XCFrameworks in
+   Xcode) and for packaged desktop release builds (bundling the libraries
+   next to the built executable). Skipping this step causes a runtime error
+   like `Failed to load dynamic library 'libsybdb.so': dlopen failed:
+   library "libsybdb.so" not found` on Android (or the platform equivalent
+   elsewhere).
+
+4. **Import the Plugin**:
    Include the plugin in your Dart code:
 
    ```dart
    import 'package:mssql_connection/mssql_connection.dart';
    ```
 
-4. **Initialize Connection**:
+5. **Initialize Connection**:
    Get an instance of `MssqlConnection`:
 
    ```dart

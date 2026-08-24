@@ -44,6 +44,12 @@ class NativeLoader {
       NativeLogger.i('Linux[DB]: building candidate directories');
       final candidateDirs = <String>[];
       try {
+        // Packaged Flutter Linux app: libs land in <bundle>/lib next to the
+        // executable via linux/CMakeLists.txt's bundled_libraries list.
+        final exeDir = File(Platform.resolvedExecutable).parent;
+        candidateDirs.add('${exeDir.path}/lib');
+      } catch (_) {}
+      try {
         final scriptDir = File.fromUri(Platform.script).parent;
         final root = scriptDir.parent; // repo root when running from tool/
         final rootPath = root.path;
@@ -202,6 +208,12 @@ class NativeLoader {
       // Prefer bundled linux/Libraries first
       NativeLogger.i('Linux[CT]: building candidate directories');
       final candidateDirs = <String>[];
+      try {
+        // Packaged Flutter Linux app: libs land in <bundle>/lib next to the
+        // executable via linux/CMakeLists.txt's bundled_libraries list.
+        final exeDir = File(Platform.resolvedExecutable).parent;
+        candidateDirs.add('${exeDir.path}/lib');
+      } catch (_) {}
       try {
         final scriptDir = File.fromUri(Platform.script).parent;
         final root = scriptDir.parent; // repo root when running from tool/

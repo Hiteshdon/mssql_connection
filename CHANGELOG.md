@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.1]
+
+### Added
+- `dart run mssql_connection:setup`: a one-time setup command Flutter apps run after adding this dependency, which copies the bundled FreeTDS native libraries into `android/app/src/main/jniLibs`, `linux/Libraries`, `windows/Libraries`, and `macos/Libraries`, and prints the remaining manual step for iOS (adding the XCFrameworks in Xcode).
+
+### Fixed
+- Documented and addressed a long-standing gap where Android (and other platform) consumers hit `Failed to load dynamic library 'libsybdb.so': dlopen failed: library "libsybdb.so" not found` at runtime because this package ships native libraries but was never wired as a Flutter plugin, so Flutter's automatic native-library bundling never applied. `mssql_connection` intentionally stays a pure Dart package (so it also works in plain Dart backend/CLI projects); the new setup command replaces manual copy-pasting of `.so`/`.dylib`/`.dll` files into consumer projects.
+- `NativeLoader` on Linux now also checks `<executable-dir>/lib` (the location Flutter's Linux bundle layout uses) in addition to the existing dev-mode relative paths.
+
 ## [3.1.0]
 
 ### Added
