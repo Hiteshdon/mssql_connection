@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - `dart run mssql_connection:setup`: a one-time setup command Flutter apps run after adding this dependency, which copies the bundled FreeTDS native libraries into `android/app/src/main/jniLibs`, `linux/Libraries`, `windows/Libraries`, and `macos/Libraries`, and prints the remaining manual step for iOS (adding the XCFrameworks in Xcode).
+- Android: a documented `mssqlConnectionSetup` Gradle task snippet for `android/app/build.gradle.kts` that runs the setup command automatically as part of `preBuild`, so libraries stay in sync across `flutter clean`/upgrades with no manual re-run. Verified against a real `flutter build apk --debug`: `libsybdb.so`/`libct.so` for all bundled ABIs end up in the built APK automatically.
 
 ### Fixed
 - Documented and addressed a long-standing gap where Android (and other platform) consumers hit `Failed to load dynamic library 'libsybdb.so': dlopen failed: library "libsybdb.so" not found` at runtime because this package ships native libraries but was never wired as a Flutter plugin, so Flutter's automatic native-library bundling never applied. `mssql_connection` intentionally stays a pure Dart package (so it also works in plain Dart backend/CLI projects); the new setup command replaces manual copy-pasting of `.so`/`.dylib`/`.dll` files into consumer projects.

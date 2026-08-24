@@ -42,3 +42,20 @@ android {
 flutter {
     source = "../.."
 }
+
+// mssql_connection ships native FreeTDS libraries but is intentionally a
+// pure Dart package (not a registered Flutter plugin, so it also works in
+// plain Dart backend/CLI projects). That means Flutter's automatic
+// native-library bundling does not apply, so this task runs the package's
+// setup command before every build, copying its bundled libraries into
+// app/src/main/jniLibs automatically -- no manual step needed after
+// `flutter clean` or upgrading the package.
+tasks.register<Exec>("mssqlConnectionSetup") {
+    workingDir = rootProject.projectDir.parentFile // the Flutter project root
+    commandLine("dart", "run", "mssql_connection:setup")
+    isIgnoreExitValue = true
+}
+
+tasks.named("preBuild") {
+    dependsOn("mssqlConnectionSetup")
+}

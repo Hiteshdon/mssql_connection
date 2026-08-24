@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Native libraries copied in by `dart run mssql_connection:setup`
+# (or the mssqlConnectionSetup Gradle task) -- regenerated on every build,
+# not meant to be committed.
+/android/app/src/main/jniLibs/
+/linux/Libraries/
+/macos/Libraries/
+/windows/Libraries/

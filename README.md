@@ -60,6 +60,27 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
    library "libsybdb.so" not found` on Android (or the platform equivalent
    elsewhere).
 
+   **Android: automate it instead.** Rather than remembering to re-run the
+   command after every `flutter clean`, add this to the end of your app's
+   `android/app/build.gradle.kts` once, and every subsequent
+   `flutter run`/`flutter build` re-syncs the libraries automatically:
+
+   ```kotlin
+   tasks.register<Exec>("mssqlConnectionSetup") {
+       workingDir = rootProject.projectDir.parentFile // the Flutter project root
+       commandLine("dart", "run", "mssql_connection:setup")
+       isIgnoreExitValue = true
+   }
+
+   tasks.named("preBuild") {
+       dependsOn("mssqlConnectionSetup")
+   }
+   ```
+
+   (Verified against a real `flutter build apk --debug`: the task runs
+   automatically, and `libsybdb.so`/`libct.so` for all three bundled ABIs
+   end up in the built APK's `lib/` folder with no manual step.)
+
 4. **Import the Plugin**:
    Include the plugin in your Dart code:
 
