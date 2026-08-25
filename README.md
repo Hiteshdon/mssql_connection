@@ -26,10 +26,10 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
 
    ```yaml
    dependencies:
-     mssql_connection: ^3.0.0
+     mssql_connection: ^3.1.1
    ```
 
-   Replace `^3.0.0` with the latest version.
+   Replace `^3.1.1` with the latest version.
 
 2. **Install Packages**:
    Run the following command to fetch the plugin:
@@ -38,36 +38,20 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
    flutter pub get
    ```
 
-3. **Copy native libraries (Flutter apps only, one-time step)**:
-
-   `mssql_connection` is a pure Dart package (not a registered Flutter
-   plugin), so it works in plain Dart backend/CLI projects too. The
-   trade-off: Flutter's automatic native-library bundling only applies to
-   registered plugins, so **Flutter apps must run this once** after adding
-   the dependency (and again after `flutter clean` or upgrading the
-   package), from the root of your Flutter app:
+3. **Set Up Native Libraries** (one-time step):
+   This plugin ships native SQL Server libraries separately from Flutter's usual plugin system, so you need to copy them into your app once. Run this from the root of your Flutter project:
 
    ```bash
    dart run mssql_connection:setup
    ```
 
-   This copies the bundled FreeTDS libraries into `android/app/src/main/jniLibs`,
-   `linux/Libraries`, `windows/Libraries`, and `macos/Libraries`, and prints
-   the remaining manual step needed for iOS (adding the XCFrameworks in
-   Xcode) and for packaged desktop release builds (bundling the libraries
-   next to the built executable). Skipping this step causes a runtime error
-   like `Failed to load dynamic library 'libsybdb.so': dlopen failed:
-   library "libsybdb.so" not found` on Android (or the platform equivalent
-   elsewhere).
+   Run it again after `flutter clean` or after upgrading the plugin. Skipping this step gives an error like `library "libsybdb.so" not found` when you try to connect.
 
-   **Android: automate it instead.** Rather than remembering to re-run the
-   command after every `flutter clean`, add this to the end of your app's
-   `android/app/build.gradle.kts` once, and every subsequent
-   `flutter run`/`flutter build` re-syncs the libraries automatically:
+   *Tip for Android:* to avoid re-running the command by hand, add this to the bottom of `android/app/build.gradle.kts` once, and it'll run automatically on every build:
 
    ```kotlin
    tasks.register<Exec>("mssqlConnectionSetup") {
-       workingDir = rootProject.projectDir.parentFile // the Flutter project root
+       workingDir = rootProject.projectDir.parentFile
        commandLine("dart", "run", "mssql_connection:setup")
        isIgnoreExitValue = true
    }
@@ -77,33 +61,23 @@ To use the MsSQL Connection plugin in your Flutter project, follow these simple 
    }
    ```
 
-   (Verified against a real `flutter build apk --debug`: the task runs
-   automatically, and `libsybdb.so`/`libct.so` for all three bundled ABIs
-   end up in the built APK's `lib/` folder with no manual step.)
-
-   **Android: also add the INTERNET permission.** `flutter create` does not
-   add this by default, and its absence produces a `connect()` failure that
-   looks identical to a native-library problem (both just return `false`
-   with no distinguishing error in the UI). Add this to
-   `android/app/src/main/AndroidManifest.xml`, as a direct child of the
-   top-level `<manifest>` element:
+4. **Add Internet Permission (Android)**:
+   Add this line inside the `<manifest>` tag in `android/app/src/main/AndroidManifest.xml`:
 
    ```xml
    <uses-permission android:name="android.permission.INTERNET" />
    ```
 
-   (Verified end-to-end on a real Android device: after adding both the
-   Gradle hook above and this permission, the example app connected to a
-   live SQL Server and ran a query successfully.)
+   Without it, `connect()` fails right away, which can look like a native library problem.
 
-4. **Import the Plugin**:
+5. **Import the Plugin**:
    Include the plugin in your Dart code:
 
    ```dart
    import 'package:mssql_connection/mssql_connection.dart';
    ```
 
-5. **Initialize Connection**:
+6. **Initialize Connection**:
    Get an instance of `MssqlConnection`:
 
    ```dart
