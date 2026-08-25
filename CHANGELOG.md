@@ -5,49 +5,46 @@ All notable changes to this project will be documented in this file.
 ## [3.1.1]
 
 ### Added
-- `dart run mssql_connection:setup`: a one-time setup command Flutter apps run after adding this dependency, which copies the bundled FreeTDS native libraries into `android/app/src/main/jniLibs`, `linux/Libraries`, `windows/Libraries`, and `macos/Libraries`, and prints the remaining manual step for iOS (adding the XCFrameworks in Xcode).
-- Android: a documented `mssqlConnectionSetup` Gradle task snippet for `android/app/build.gradle.kts` that runs the setup command automatically as part of `preBuild`, so libraries stay in sync across `flutter clean`/upgrades with no manual re-run. Verified against a real `flutter build apk --debug`: `libsybdb.so`/`libct.so` for all bundled ABIs end up in the built APK automatically.
+- One-time setup command to copy native SQL Server libraries into Flutter apps.
+- Gradle task snippet for Android to run the setup command automatically on every build.
 
 ### Fixed
-- Documented and addressed a long-standing gap where Android (and other platform) consumers hit `Failed to load dynamic library 'libsybdb.so': dlopen failed: library "libsybdb.so" not found` at runtime because this package ships native libraries but was never wired as a Flutter plugin, so Flutter's automatic native-library bundling never applied. `mssql_connection` intentionally stays a pure Dart package (so it also works in plain Dart backend/CLI projects); the new setup command replaces manual copy-pasting of `.so`/`.dylib`/`.dll` files into consumer projects.
-- `NativeLoader` on Linux now also checks `<executable-dir>/lib` (the location Flutter's Linux bundle layout uses) in addition to the existing dev-mode relative paths.
-- Documented that Android apps also need `<uses-permission android:name="android.permission.INTERNET" />` in their manifest (not added by `flutter create` by default), since its absence causes `connect()` to fail instantly with no error distinguishing it from a native-library problem. Added it to the example app's manifest and verified an end-to-end connection + query against a live SQL Server on a real Android device.
+- Native library loading failures on Android and other platforms caused by missing Flutter plugin registration.
+- Improved native library discovery on Linux for packaged desktop builds.
+- Documented the Android internet permission required for the plugin to connect.
 
 ## [3.1.0]
 
 ### Added
-- `connect()` options: `encrypt`, `trustServerCertificate`, and `tdsVersion` for TLS/TDS control on hosted and local SQL Server.
-- Integration tests for connect options and RPC null/Unicode parameter bindings.
-- `MssqlClient.executeBatch()`: send multiple SQL statements in a single `dbcmd`/`dbsqlexec` round-trip instead of one round-trip per statement.
-- `MssqlClient.executeParamsBatch()`: batch multiple parameterized statements into chunked SQL batches with safely escaped literals, avoiding one `sp_executesql` RPC per statement.
+- New `connect()` options for TLS encryption and TDS protocol version control.
+- Batch execution methods for sending multiple SQL statements in a single round-trip.
 
 ### Changed
-- `MssqlConnection.writeBatch()` now sends all statements as a single network round-trip (wrapped in `BEGIN TRAN`/`COMMIT`) instead of executing each statement sequentially. ~15,000+ rows/sec for batched INSERTs (up from ~100 rows/sec doing one round-trip per row).
-- `MssqlConnection.writeBatchWithParams()` now uses `executeParamsBatch` internally, giving roughly an 80x throughput improvement over the previous one-RPC-per-statement implementation while preserving parameterized value safety (proper quoting/escaping, no string concatenation of user input).
+- Batched write operations are significantly faster, using far fewer network round-trips.
 
 ### Fixed
-- Parameterized queries (`getDataWithParams` / `writeDataWithParams`) now bind NULL and Unicode strings using UTF-8 `SYBVARCHAR`, fixing connection drops on Azure SQL Edge (Msg 3621 / type 0x67).
-- DB-Lib error messages are appended instead of overwritten, improving diagnosability.
-- Large `FOR JSON PATH` payloads no longer truncate when FreeTDS returns `BUF_FULL` from `dbnextrow()`.
-- macOS Homebrew library paths for Apple Silicon and Intel (`/opt/homebrew/lib`, `/usr/local/lib`).
+- Parameterized queries now handle NULL and Unicode values correctly on Azure SQL Edge.
+- Improved error message diagnostics for DB-Lib failures.
+- Large JSON payloads no longer get truncated on read.
+- Fixed macOS library path detection for Homebrew installations.
 
 ## [3.0.0]
 
 ### Added
-- Cross-platform support via Dart FFI + FreeTDS for Windows, Android, iOS, macOS, and Linux.
-- Transaction helpers: `beginTransaction`, `commit`, `rollback`.
-- Bulk insertion API using FreeTDS BCP for high-throughput inserts.
-- Parameterized queries (via `sp_executesql`) to reduce SQL injection risk.
+- Cross-platform support via Dart FFI and FreeTDS for Windows, Android, iOS, macOS, and Linux.
+- Transaction helpers for beginning, committing, and rolling back transactions.
+- Bulk insertion support for high-throughput inserts.
+- Parameterized queries to reduce SQL injection risk.
 
 ### Changed
-- Unified JSON response shape for all operations: `{ "columns": [...], "rows": [...], "affected": N }`.
-- Replaced platform-specific method channels/ODBC paths with a single FFI pipeline for consistent behavior.
+- Unified JSON response shape for all read and write operations.
+- Replaced platform-specific method channels and ODBC paths with a single FFI pipeline for consistent behavior.
 
 ### Fixed
-- More robust Unicode/large text handling and consistent Base64 encoding for binary columns.
+- More robust Unicode and large text handling, with consistent encoding for binary columns.
 
 ### Breaking
-- `getData`/`writeData` return a unified JSON object instead of an array-only payload. Update parsers accordingly.
+- Read and write operations now return a unified JSON object instead of an array-only payload. Update parsers accordingly.
 
 ## [2.0.2]
 
