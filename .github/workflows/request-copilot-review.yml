@@ -12,13 +12,31 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - name: Comment to trigger Copilot review
+      - name: Formally request Copilot as a reviewer
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: "@copilot please review this PR."
-            });
+            // GitHub's Copilot code-review bot. Global App account, same ID on
+            // every repo — verify with: gh api "users/copilot-pull-request-reviewer%5Bbot%5D"
+            const COPILOT_BOT_NODE_ID = "BOT_kgDOCnlnWA";
+            try {
+              await github.graphql(
+                `mutation($prId: ID!, $botId: ID!) {
+                  requestReviews(input: {pullRequestId: $prId, botIds: [$botId], union: true}) {
+                    clientMutationId
+                  }
+                }`,
+                { prId: context.payload.pull_request.node_id, botId: COPILOT_BOT_NODE_ID }
+              );
+            } catch (e) {
+              // Fall back to the mention-comment trigger, which is the older
+              // known-working mechanism, in case the formal request API ever
+              // changes — this repo's automation should not go silent either way.
+              core.warning(`Formal review request failed: ${e.message}. Falling back to a comment mention.`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: "@copilot please review this PR."
+              });
+            }
